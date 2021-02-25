@@ -1,0 +1,46 @@
+﻿using System;
+using UnityEngine;
+
+public enum CommandType {
+	Move,
+	Remove,
+	Castling,
+	Promotion,
+	DoubleStep,
+	EnPassant,
+}
+
+[Serializable]
+public class CommandSaveData {
+	public CommandType commandType;
+	public string data;
+
+	public CommandSaveData(ICommand command) {
+		this.data = JsonUtility.ToJson(command);
+		SetCommandType(command);
+	}
+
+	private void SetCommandType(ICommand command) {
+		commandType = command switch {
+			MoveCommand _ => CommandType.Move,
+			RemoveCommand _ => CommandType.Remove,
+			CastlingCommand _ => CommandType.Castling,
+			PromotionCommand _ => CommandType.Promotion,
+			DoubleStepCommand _ => CommandType.DoubleStep,
+			EnPassantCommand _ => CommandType.EnPassant,
+			_ => commandType
+		};
+	}
+
+	public ICommand Deserialized() {
+		return commandType switch {
+			CommandType.Move => JsonUtility.FromJson<MoveCommand>(data),
+			CommandType.Remove => JsonUtility.FromJson<RemoveCommand>(data),
+			CommandType.Castling => JsonUtility.FromJson<CastlingCommand>(data),
+			CommandType.Promotion => JsonUtility.FromJson<PromotionCommand>(data),
+			CommandType.DoubleStep => JsonUtility.FromJson<DoubleStepCommand>(data),
+			CommandType.EnPassant => JsonUtility.FromJson<EnPassantCommand>(data),
+			_ => throw new ArgumentOutOfRangeException()
+		};
+	}
+}

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources tools:keep="@string/firebase_database_url,@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id,@string/default_web_client_id" xmlns:tools="http://schemas.android.com/tools">
+  <string name="firebase_database_url" translatable="false">https://fir-chess-d1bb6-default-rtdb.firebaseio.com</string>
+  <string name="gcm_defaultSenderId" translatable="false">439219307767</string>
+  <string name="google_storage_bucket" translatable="false">fir-chess-d1bb6.appspot.com</string>
+  <string name="project_id" translatable="false">fir-chess-d1bb6</string>
+  <string name="google_api_key" translatable="false">AIzaSyBzqrvHsLtdVDMIbcUJwrt1lhByXxUAVbM</string>
+  <string name="google_crash_reporting_api_key" translatable="false">AIzaSyBzqrvHsLtdVDMIbcUJwrt1lhByXxUAVbM</string>
+  <string name="google_app_id" translatable="false">1:439219307767:android:faa0203b825a762b2f3ff2</string>
+  <string name="default_web_client_id" translatable="false">439219307767-imhf4i1h2h2nnpmtvg2k5gps7m2t3hdn.apps.googleusercontent.com</string>
+</resources>

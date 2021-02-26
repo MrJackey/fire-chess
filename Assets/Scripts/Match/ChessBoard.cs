@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 
 [RequireComponent(typeof(Tilemap))]
@@ -150,13 +149,13 @@ public class ChessBoard : MonoBehaviour {
 			DisablePassant();
 		}
 
-		if (ExecuteMove(typeOfMove, clickedPiece, boardClick)) {
+		if (TryExecuteMove(typeOfMove, clickedPiece, boardClick)) {
 			replay.Save();
 			DeselectPiece();
 		}
 	}
 
-	private bool ExecuteMove(MoveType typeOfMove, ChessPiece clickedPiece, Vector2Int boardClick) {
+	private bool TryExecuteMove(MoveType typeOfMove, ChessPiece clickedPiece, Vector2Int boardClick) {
 		switch (typeOfMove) {
 			case MoveType.Move:
 				if (clickedPiece != null) {
@@ -208,14 +207,12 @@ public class ChessBoard : MonoBehaviour {
 	#region Actions
 
 	private void SelectPiece(ChessPiece piece) {
-		// Debug.Log($"[Board] Selecting piece: {piece}");
 		selectedPiece = piece;
 		selectedParticleSystem.transform.position = BoardToWorld(piece.Position);
 		selectedParticleSystem.Play();
 	}
 
 	private void DeselectPiece() {
-		// Debug.Log($"[Board] Deselecting piece: {selectedPiece}");
 		selectedPiece = null;
 		selectedParticleSystem.Stop();
 	}
@@ -250,7 +247,6 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	public void MovePiece(Vector2Int from, Vector2Int to) {
-		// Debug.Log($"[Board] Moving piece from: {from} to: {to}");
 		ChessPiece piece = board[from.x, from.y];
 		piece.transform.position = BoardToWorld(to);
 
@@ -260,7 +256,6 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	public void DestroyPiece(Vector2Int boardPosition) {
-		// Debug.Log($"[Board] Destroying piece at: {boardPosition}");
 		Destroy(board[boardPosition.x, boardPosition.y].gameObject);
 		board[boardPosition.x, boardPosition.y] = null;
 	}

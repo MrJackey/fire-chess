@@ -32,7 +32,7 @@ public class ReplaySystem : MonoBehaviour {
 
 	private void OnEnable() {
 		if (!MatchManager.SubscribeToMatchUpdates()) {
-			Debug.LogWarning("The MatchManager was unable to fetch match data. Redirecting to lobby");
+			Debug.LogWarning("The MatchManager does not have a matchID. Redirecting to lobby");
 			SceneManager.LoadScene(1);
 		}
 
@@ -43,6 +43,8 @@ public class ReplaySystem : MonoBehaviour {
 	private void OnDisable() {
 		MatchManager.UnsubscribeFromMatchUpdates();
 		MatchManager.OnNewData.RemoveListener(HandleNewCommands);
+		MatchManager.MatchID = default;
+
 		slider.onValueChanged.RemoveListener(HandleSliderUpdated);
 	}
 

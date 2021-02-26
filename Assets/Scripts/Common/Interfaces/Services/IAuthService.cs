@@ -5,6 +5,6 @@ public interface IAuthService {
 	Task SignIn(string email, string password);
 	void SignOut();
 
-	string GetDisplayName();
-	string GetUserID();
+	string UserID { get; }
+	string DisplayName { get; }
 }

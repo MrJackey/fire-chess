@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Random = UnityEngine.Random;
 
 [Serializable]
 public class MatchSaveData {
@@ -12,9 +12,17 @@ public class MatchSaveData {
 	public int turnCount;
 	public string activePlayer;
 
-	public MatchSaveData(string pOneID, string pTwoID) {
-		this.activePlayer = pOneID;
-		this.playerOne = pOneID;
-		this.playerTwo = pTwoID;
+	public MatchSaveData(string playerOneID, string playerTwoID, bool randomizeOrder) {
+		if (randomizeOrder) {
+			if (Random.Range(0, 1) < 0.5f) {
+				this.playerOne = playerTwoID;
+				this.playerTwo = playerOneID;
+				return;
+			}
+		}
+		this.playerOne = playerOneID;
+		this.playerTwo = playerTwoID;
+
+		this.activePlayer = playerOneID;
 	}
 }

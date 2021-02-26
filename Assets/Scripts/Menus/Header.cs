@@ -6,7 +6,7 @@ public class Header : MonoBehaviour {
 	[SerializeField] private TMP_Text displayNameText;
 
 	private void Start() {
-		displayNameText.text = ServiceLocator.Auth.GetDisplayName();
+		displayNameText.text = ServiceLocator.Auth.DisplayName;
 	}
 
 	public void SignOut() {

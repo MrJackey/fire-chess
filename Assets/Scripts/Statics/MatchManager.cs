@@ -21,7 +21,7 @@ public static class MatchManager {
 
 	public static UnityEvent<MatchSaveData> OnNewData { get; } = new UnityEvent<MatchSaveData>();
 
-	public static bool IsMyTurn => ServiceLocator.Auth.GetUserID() == data.activePlayer;
+	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.activePlayer;
 
 	public static bool SubscribeToMatchUpdates() {
 		if (matchID == default) return false;
@@ -38,7 +38,7 @@ public static class MatchManager {
 
 	private static void HandleMatchUpdate(MatchSaveData newData) {
 		data = newData;
-		team = ServiceLocator.Auth.GetUserID() == data.playerOne ? Team.White : Team.Black;
+		team = ServiceLocator.Auth.UserID == data.playerOne ? Team.White : Team.Black;
 
 		Debug.Log("[Match] Received an update");
 		OnNewData.Invoke(data);

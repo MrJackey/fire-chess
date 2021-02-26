@@ -5,6 +5,9 @@ using UnityEngine;
 public class FirebaseAuthProvider : IAuthService {
 	private FirebaseAuth auth;
 
+	public string UserID => auth.CurrentUser.UserId;
+	public string DisplayName => auth.CurrentUser.DisplayName;
+
 	public FirebaseAuthProvider() {
 		this.auth = FirebaseAuth.DefaultInstance;
 	}
@@ -42,13 +45,5 @@ public class FirebaseAuthProvider : IAuthService {
 
 		Debug.Log("[Auth] Signing out");
 		auth.SignOut();
-	}
-
-	public string GetDisplayName() {
-		return auth.CurrentUser.DisplayName;
-	}
-
-	public string GetUserID() {
-		return auth.CurrentUser.UserId;
 	}
 }

@@ -11,26 +11,20 @@ public class MatchBrowser : MonoBehaviour {
 		RefreshMatches();
 	}
 
-	// TODO: Implement actual matchmaking / or use similar for private lobbies
-	public async void CreateNewMatch() {
-		string userID = ServiceLocator.Auth.GetUserID();
-		MatchSaveData newMatch = new MatchSaveData(userID, "o8Ew44UQPAOOjmrsRhsAkS4XutR2");
-		await ServiceLocator.DB.CreateMatch(newMatch);
-	}
-
 	public async void RefreshMatches() {
-		string userID = ServiceLocator.Auth.GetUserID();
+		string userID = ServiceLocator.Auth.UserID;
 		RemoveAllMatches();
 		KeyValuePair<string, MatchSaveData>[] matches = await ServiceLocator.DB.GetMatches(userID);
-		AddMatches(matches);
+
+		foreach ((string matchID, MatchSaveData data) in matches) {
+			AddMatch(matchID, data);
+		}
 	}
 
-	private void AddMatches(KeyValuePair<string, MatchSaveData>[] matches) {
-		foreach ((string matchID, MatchSaveData data) in matches) {
-			MatchBrowserItem item = Instantiate(browserMatchItemPrefab, browserContent.transform);
+	public void AddMatch(string matchID, MatchSaveData matchData) {
+		MatchBrowserItem item = Instantiate(browserMatchItemPrefab, browserContent.transform);
 
-			item.UpdateMatchData(matchID, data);
-		}
+		item.UpdateMatchData(matchID, matchData);
 	}
 
 	private void RemoveAllMatches() {

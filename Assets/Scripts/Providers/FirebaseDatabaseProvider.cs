@@ -15,11 +15,12 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		matchSubscriptions = new List<EventHandler<ValueChangedEventArgs>>();
 	}
 
-	// TODO: Implement actual matchmaking
-	public async Task CreateMatch(MatchSaveData newMatchData) {
+	public async Task CreateMatch(string playerOne, string playerTwo) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
+
+		MatchSaveData newMatchData = new MatchSaveData(playerOne, playerTwo, true);
 
 		Debug.Log("[DB] Creating match");
 
@@ -38,39 +39,39 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		Debug.Log("[DB] Fetching matches");
 
 		DataSnapshot snap1 = await db.RootReference.Child("matches")
-	#if !UNITY_EDITOR
-			.OrderByChild(nameof(MatchSaveData.playerOne))
-			.EqualTo(userID)
-	#endif
+	// #if !UNITY_EDITOR
+	// 		.OrderByChild(nameof(MatchSaveData.playerOne))
+	// 		.EqualTo(userID)
+	// #endif
 			.GetValueAsync();
 
-	#if !UNITY_EDITOR
-		DataSnapshot snap2 = await db.RootReference.Child("matches")
-			.OrderByChild(nameof(MatchSaveData.playerTwo))
-			.EqualTo(userID)
-			.GetValueAsync();
-	#endif
+	// #if !UNITY_EDITOR
+	// 	DataSnapshot snap2 = await db.RootReference.Child("matches")
+	// 		.OrderByChild(nameof(MatchSaveData.playerTwo))
+	// 		.EqualTo(userID)
+	// 		.GetValueAsync();
+	// #endif
 
 		Debug.Log("[DB] Successfully fetched matches");
 
 		Dictionary<string, MatchSaveData> matchesAsPlayerOne =
 			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue());
-	#if !UNITY_EDITOR
-		Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
-			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
-	#endif
+	// #if !UNITY_EDITOR
+	// 	Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
+	// 		JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
+	// #endif
 
-	#if UNITY_EDITOR
+	// #if UNITY_EDITOR
 		// Client side querying instead of server-side
 		return matchesAsPlayerOne
 			.Where(pair => pair.Value.playerOne == userID || pair.Value.playerTwo == userID)
 			.GroupBy(pair => pair.Key)
 			.Select(group => group.First())
 			.ToArray();
-	#else
+	// #else
 		// If serverside querying works
-		return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
-	#endif
+	// 	return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
+	// #endif
 	}
 
 	public async void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> callback) {

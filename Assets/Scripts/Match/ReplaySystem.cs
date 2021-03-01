@@ -16,7 +16,7 @@ public class ReplaySystem : MonoBehaviour {
 	[SerializeField] private GameObject newMovesNotification;
 
 	[Space]
-	[SerializeField] private float playCommandDelay;
+	[SerializeField] private float showCommandDelay;
 
 	private List<ICommand> commands;
 	public List<ICommand> Commands => commands;
@@ -81,7 +81,7 @@ public class ReplaySystem : MonoBehaviour {
 	private IEnumerator CoShowCommands(int target, int direction) {
 		for (int i = currentCommandIndex; i != target; i+= direction) {
 			ExecuteNextCommand(direction);
-			yield return new WaitForSeconds(1f);
+			yield return new WaitForSeconds(showCommandDelay);
 		}
 
 		yield return null;
@@ -146,28 +146,31 @@ public class ReplaySystem : MonoBehaviour {
 	#region UI Events
 
 	public void ToStart() {
-		StopAllCoroutines();
+		PrepareReplayUpdate();
 		PlayCommands(-1, -1);
 	}
 
 	public void StepBackward() {
-		StopAllCoroutines();
+		PrepareReplayUpdate();
 		GoBack();
 	}
 
 	public void PlayManually() {
-		StopAllCoroutines();
+		PrepareReplayUpdate();
 		StartCoroutine(CoShowCommands(commands.Count - 1, 1));
 	}
 
 	public void StepForward() {
-		StopAllCoroutines();
 		GoForward();
 	}
 
 	public void ToEnd() {
-		StopAllCoroutines();
 		PlayCommands(commands.Count - 1, 1);
+	}
+
+	private void PrepareReplayUpdate() {
+		board.DeselectPiece();
+		StopAllCoroutines();
 	}
 
 	private void HandleSliderUpdated(float value) {

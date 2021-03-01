@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -50,6 +51,7 @@ public static class MatchManager {
 		data.activePlayer = data.activePlayer == data.playerOne
 			? data.playerTwo
 			: data.playerOne;
+		data.lastUpdated = DateTime.UtcNow.ToString("u");
 
 		ServiceLocator.DB.UpdateMatch(matchID, data);
 	}

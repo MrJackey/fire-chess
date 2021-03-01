@@ -1583,7 +1583,7 @@ MonoBehaviour:
   text: {fileID: 1523274748}
   slider: {fileID: 89443943}
   newMovesNotification: {fileID: 1285320348}
-  playCommandDelay: 0
+  showCommandDelay: 0.75
 --- !u!114 &1508383948
 MonoBehaviour:
   m_ObjectHideFlags: 0

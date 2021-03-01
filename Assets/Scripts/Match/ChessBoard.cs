@@ -212,7 +212,7 @@ public class ChessBoard : MonoBehaviour {
 		selectedParticleSystem.Play();
 	}
 
-	private void DeselectPiece() {
+	public void DeselectPiece() {
 		selectedPiece = null;
 		selectedParticleSystem.Stop();
 	}

@@ -1,6 +1,6 @@
-using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Matchmaking : MonoBehaviour {
 	[SerializeField] private MatchBrowser matchBrowser;
@@ -22,7 +22,12 @@ public class Matchmaking : MonoBehaviour {
 			lobbyID = default;
 		}
 
-		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID);
+		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID,
+			(matchID) => {
+				MatchManager.MatchID = matchID;
+				SceneManager.LoadScene(2);
+			});
+
 		lobbyIDText.text = lobbyID;
 		GUIUtility.systemCopyBuffer = lobbyID;
 		NotificationManager.Instance.AddNotification("Your lobby has been copied to clipboard");
@@ -31,15 +36,21 @@ public class Matchmaking : MonoBehaviour {
 	public void JoinPrivateLobby() {
 		string otherLobbyID = privateLobbyInputField.text;
 		if (otherLobbyID.Trim() == "") return;
+		if (otherLobbyID == lobbyID) {
+			NotificationManager.Instance.AddNotification("You can't join your own lobbies");
+			return;
+		}
 
 		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleSucceedJoinLobby, HandleFailJoinLobby);
 	}
 
-	private async void HandleSucceedJoinLobby(string otherPlayerID) {
-		Debug.Log($"Creating game with player: {otherPlayerID}");
+	private async void HandleSucceedJoinLobby(string otherLobbyID, string otherPlayerID) {
 		string userID = ServiceLocator.Auth.UserID;
-		await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
-		matchBrowser.RefreshMatches();
+		string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
+		await ServiceLocator.Matchmaking.AddMatchToLobby(otherLobbyID, matchID);
+
+		MatchManager.MatchID = matchID;
+		SceneManager.LoadScene(2);
 	}
 
 	private void HandleFailJoinLobby() {

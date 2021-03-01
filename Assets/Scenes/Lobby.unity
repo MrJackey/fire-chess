@@ -2332,7 +2332,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84abeeaa738e8b749b61134da0f90338, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  matchBrowser: {fileID: 0}
+  matchBrowser: {fileID: 876519866}
   lobbyIDText: {fileID: 1076505234}
   privateLobbyInputField: {fileID: 679775932}
 --- !u!1001 &3451411986587315903

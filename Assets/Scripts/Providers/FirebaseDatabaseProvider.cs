@@ -15,7 +15,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		matchSubscriptions = new List<EventHandler<ValueChangedEventArgs>>();
 	}
 
-	public async Task CreateMatch(string playerOne, string playerTwo, bool randomizeTeams = true) {
+	public async Task<string> CreateMatch(string playerOne, string playerTwo, bool randomizeTeams = true) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
@@ -27,8 +27,12 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		string json = JsonUtility.ToJson(newMatchData);
 		Debug.Log(json);
 
-		await db.RootReference.Child("matches").Push().SetRawJsonValueAsync(json);
+		DatabaseReference matchRef = db.RootReference.Child("matches").Push();
+		string key = matchRef.Key;
+		await matchRef.SetRawJsonValueAsync(json);
+
 		Debug.Log("[DB] Successfully created a match");
+		return key;
 	}
 
 	public async Task<KeyValuePair<string, MatchSaveData>[]> GetMatches(string userID) {
@@ -74,7 +78,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 	// #endif
 	}
 
-	public async void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> callback) {
+	public async void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> onUpdate) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
@@ -84,7 +88,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 				throw args.DatabaseError.ToException();
 			}
 
-			callback(JsonConvert.DeserializeObject<MatchSaveData>(args.Snapshot.GetRawJsonValue()));
+			onUpdate(JsonConvert.DeserializeObject<MatchSaveData>(args.Snapshot.GetRawJsonValue()));
 		}
 
 		db.RootReference.Child("matches").Child(matchID).ValueChanged += HandleMatchUpdate;

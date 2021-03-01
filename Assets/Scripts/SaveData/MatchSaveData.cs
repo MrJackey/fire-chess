@@ -12,17 +12,21 @@ public class MatchSaveData {
 	public int turnCount;
 	public string activePlayer;
 
+	public string lastUpdated;
+
 	public MatchSaveData(string playerOneID, string playerTwoID, bool randomizeOrder) {
 		if (randomizeOrder) {
 			if (Random.Range(0, 1) < 0.5f) {
 				this.playerOne = playerTwoID;
 				this.playerTwo = playerOneID;
-				return;
 			}
 		}
-		this.playerOne = playerOneID;
-		this.playerTwo = playerTwoID;
+		else {
+			this.playerOne = playerOneID;
+			this.playerTwo = playerTwoID;
+		}
 
-		this.activePlayer = playerOneID;
+		this.activePlayer = playerOne;
+		this.lastUpdated = DateTime.UtcNow.ToString("u");
 	}
 }

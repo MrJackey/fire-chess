@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +16,9 @@ public class MatchBrowser : MonoBehaviour {
 		string userID = ServiceLocator.Auth.UserID;
 		RemoveAllMatches();
 		KeyValuePair<string, MatchSaveData>[] matches = await ServiceLocator.DB.GetMatches(userID);
+
+		Array.Sort(matches, (current, next) =>
+			(int)(DateTime.Parse(next.Value.lastUpdated).Ticks - DateTime.Parse(current.Value.lastUpdated).Ticks));
 
 		noMatchesInfo.SetActive(matches.Length < 1);
 		foreach ((string matchID, MatchSaveData data) in matches) {

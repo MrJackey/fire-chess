@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using Firebase;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,8 +14,8 @@ public class SignInForm : MonoBehaviour, IForm {
 			await ServiceLocator.Auth.SignIn(emailField.text, passwordField.text);
 			SceneManager.LoadScene(1);
 		}
-		catch (Exception e) {
-			Debug.LogError(e);
+		catch (AggregateException agg) when (agg.InnerException is FirebaseException e) {
+			NotificationManager.Instance.AddNotification(e.Message);
 		}
 	}
 }

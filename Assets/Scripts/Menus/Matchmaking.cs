@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -6,17 +7,32 @@ public class Matchmaking : MonoBehaviour {
 	[SerializeField] private TMP_Text lobbyIDText;
 	[SerializeField] private TMP_InputField privateLobbyInputField;
 
+	private string lobbyID;
+
+	private async void OnDisable() {
+		if (lobbyID != default) {
+			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
+			lobbyID = default;
+		}
+	}
+
 	public async void CreatePrivateLobby() {
-		string lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID);
+		if (lobbyID != default) {
+			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
+			lobbyID = default;
+		}
+
+		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID);
 		lobbyIDText.text = lobbyID;
 		GUIUtility.systemCopyBuffer = lobbyID;
+		NotificationManager.Instance.AddNotification("Your lobby has been copied to clipboard");
 	}
 
 	public void JoinPrivateLobby() {
-		string lobbyID = privateLobbyInputField.text;
-		if (lobbyID.Trim() == "") return;
+		string otherLobbyID = privateLobbyInputField.text;
+		if (otherLobbyID.Trim() == "") return;
 
-		ServiceLocator.Matchmaking.JoinPrivateLobby(lobbyID, HandleSucceedJoinLobby, HandleFailJoinLobby);
+		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleSucceedJoinLobby, HandleFailJoinLobby);
 	}
 
 	private async void HandleSucceedJoinLobby(string otherPlayerID) {

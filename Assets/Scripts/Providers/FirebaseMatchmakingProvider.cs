@@ -25,7 +25,15 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 		return lobby.Key;
 	}
 
-	public async void JoinPrivateLobby(string lobbyID, Action<string> onSuccess, Action onFailure) {
+	public async Task DestroyPrivateLobby(string lobbyID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		await db.RootReference.Child("lobbies").Child("private").Child(lobbyID).RemoveValueAsync();
+	}
+
+	public async void TryJoinPrivateLobby(string lobbyID, Action<string> onSuccess, Action onFailure) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
@@ -36,8 +44,8 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			DataSnapshot transactionResult = await lobbyRef.RunTransaction(lobbyData => {
 				if (!lobbyData.HasChildren) return TransactionResult.Success(lobbyData);
 
-				if ((bool)lobbyData.Child(nameof(LobbySaveData.isFull)).Value == false) {
-					lobbyData.Child(nameof(LobbySaveData.isFull)).Value = true;
+				if ((bool)lobbyData.Child(nameof(LobbySaveData.isJoinable)).Value == false) {
+					lobbyData.Child(nameof(LobbySaveData.isJoinable)).Value = true;
 					return TransactionResult.Success(lobbyData);
 				}
 

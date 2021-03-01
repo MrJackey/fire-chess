@@ -13,7 +13,9 @@ public class ReplaySystem : MonoBehaviour {
 	[Header("UI")]
 	[SerializeField] private TMP_Text text;
 	[SerializeField] private Slider slider;
+	[SerializeField] private GameObject newMovesNotification;
 
+	[Space]
 	[SerializeField] private float playCommandDelay;
 
 	private List<ICommand> commands;
@@ -28,6 +30,7 @@ public class ReplaySystem : MonoBehaviour {
 		commands = new List<ICommand>();
 		newCommands = new List<ICommand>();
 		currentCommandIndex = -1;
+		newMovesNotification.SetActive(false);
 	}
 
 	private void OnEnable() {
@@ -36,19 +39,19 @@ public class ReplaySystem : MonoBehaviour {
 			SceneManager.LoadScene(1);
 		}
 
-		MatchManager.OnNewData.AddListener(HandleNewCommands);
+		MatchManager.OnNewData.AddListener(HandleNewData);
 		slider.onValueChanged.AddListener(HandleSliderUpdated);
 	}
 
 	private void OnDisable() {
 		MatchManager.UnsubscribeFromMatchUpdates();
-		MatchManager.OnNewData.RemoveListener(HandleNewCommands);
+		MatchManager.OnNewData.RemoveListener(HandleNewData);
 		MatchManager.MatchID = default;
 
 		slider.onValueChanged.RemoveListener(HandleSliderUpdated);
 	}
 
-	private void HandleNewCommands(MatchSaveData data) {
+	private void HandleNewData(MatchSaveData data) {
 		bool wasLive = IsLive;
 		commands = data.commands.Select(x => x.Deserialized()).ToList();
 		slider.maxValue = commands.Count;
@@ -57,6 +60,16 @@ public class ReplaySystem : MonoBehaviour {
 		if (wasLive) {
 			StartCoroutine(CoShowCommands(commands.Count, 1));
 		}
+		else {
+			NotificationManager.Instance.AddNotification("Your opponent has made a new move");
+			newMovesNotification.SetActive(true);
+		}
+	}
+
+	public void AddCommand(ICommand command) {
+		if (!IsLive) return;
+
+		newCommands.Add(command);
 	}
 
 	private void PlayCommands(int target, int direction) {
@@ -86,6 +99,10 @@ public class ReplaySystem : MonoBehaviour {
 			if (IsLive) return;
 
 			ExecuteCommand(commands[currentCommandIndex + 1]);
+
+			if (IsLive) {
+				newMovesNotification.SetActive(false);
+			}
 
 			if (currentCommandIndex < commands.Count && commands[currentCommandIndex].DoStep) {
 				continue;
@@ -124,12 +141,6 @@ public class ReplaySystem : MonoBehaviour {
 
 	private void UpdateSlider() {
 		slider.value = currentCommandIndex + 1;
-	}
-
-	public void AddCommand(ICommand command) {
-		if (!IsLive) return;
-
-		newCommands.Add(command);
 	}
 
 	#region UI Events

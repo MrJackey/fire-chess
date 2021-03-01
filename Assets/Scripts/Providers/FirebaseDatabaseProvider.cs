@@ -15,12 +15,12 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		matchSubscriptions = new List<EventHandler<ValueChangedEventArgs>>();
 	}
 
-	public async Task CreateMatch(string playerOne, string playerTwo) {
+	public async Task CreateMatch(string playerOne, string playerTwo, bool randomizeTeams = true) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
 
-		MatchSaveData newMatchData = new MatchSaveData(playerOne, playerTwo, true);
+		MatchSaveData newMatchData = new MatchSaveData(playerOne, playerTwo, randomizeTeams);
 
 		Debug.Log("[DB] Creating match");
 

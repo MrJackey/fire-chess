@@ -73,8 +73,7 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			});
 
 			if (transactionResult.Value != null) {
-				// await lobbyRef.RemoveValueAsync();
-				onSuccess(lobbyID, transactionResult.Child("lobbyOwner").Value.ToString());
+				onSuccess(lobbyID, transactionResult.Child(nameof(LobbySaveData.lobbyOwnerID)).Value.ToString());
 				return;
 			}
 		}

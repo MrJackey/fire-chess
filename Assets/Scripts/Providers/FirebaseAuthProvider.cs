@@ -17,14 +17,14 @@ public class FirebaseAuthProvider : IAuthService {
 			await FirebaseStatus.Initialization;
 		}
 
-		Debug.Log("[Auth] Creating account");
 		FirebaseUser user = await auth.CreateUserWithEmailAndPasswordAsync(email, password);
 
 		UserProfile userProfile = new UserProfile {
 			DisplayName = displayName,
 		};
 		await user.UpdateUserProfileAsync(userProfile);
-		Debug.Log("[Auth] Successfully created an account");
+
+		await ServiceLocator.DB.UpdateUser(UserID, new UserSaveData(userProfile.DisplayName));
 	}
 
 	public async Task SignIn(string email, string password) {

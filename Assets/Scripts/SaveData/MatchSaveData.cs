@@ -4,9 +4,10 @@ using Random = UnityEngine.Random;
 
 [Serializable]
 public class MatchSaveData {
-	// Don't change name to playerOneID, it breaks firebase!!!
-	public string playerOne;
-	public string playerTwo;
+	public string playerOneID;
+	public string playerTwoID;
+	public string playerOneName;
+	public string playerTwoName;
 
 	public List<CommandSaveData> commands = new List<CommandSaveData>();
 	public int turnCount;
@@ -14,19 +15,25 @@ public class MatchSaveData {
 
 	public string lastUpdated;
 
-	public MatchSaveData(string playerOneID, string playerTwoID, bool randomizeOrder) {
-		if (randomizeOrder) {
+	public string OpponentName => ServiceLocator.Auth.UserID == playerOneID ? playerTwoName : playerOneName;
+
+	public MatchSaveData(string playerOneID, string playerOneName, string playerTwoID, string playerTwoName, bool randomizeTeam) {
+		if (randomizeTeam) {
 			if (Random.Range(0, 1) < 0.5f) {
-				this.playerOne = playerTwoID;
-				this.playerTwo = playerOneID;
+				this.playerOneID = playerTwoID;
+				this.playerOneName = playerTwoName;
+				this.playerTwoID = playerOneID;
+				this.playerTwoName = playerOneName;
 			}
 		}
 		else {
-			this.playerOne = playerOneID;
-			this.playerTwo = playerTwoID;
+			this.playerOneID = playerOneID;
+			this.playerOneName = playerOneName;
+			this.playerTwoID = playerTwoID;
+			this.playerTwoName = playerTwoName;
 		}
 
-		this.activePlayer = playerOne;
+		this.activePlayer = this.playerOneID;
 		this.lastUpdated = DateTime.UtcNow.ToString("u");
 	}
 }

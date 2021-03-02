@@ -1,6 +1,5 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class MatchBrowserItem : MonoBehaviour {
 	[SerializeField] private TMP_Text opponentNameText;
@@ -13,13 +12,11 @@ public class MatchBrowserItem : MonoBehaviour {
 		matchID = newMatchID;
 		data = newData;
 
-		opponentNameText.text = data.playerTwo;
+		opponentNameText.text = data.OpponentName;
 		turnCountText.text = data.turnCount.ToString();
 	}
 
 	public void EnterBoard() {
-		MatchManager.MatchID = matchID;
-
-		SceneManager.LoadScene(2);
+		MatchManager.OpenGame(matchID);
 	}
 }

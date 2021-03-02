@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public static class MatchManager {
 	private static string matchID;
@@ -12,10 +13,6 @@ public static class MatchManager {
 	}
 
 	private static MatchSaveData data;
-	public static MatchSaveData Data {
-		get => data;
-		set => data = value;
-	}
 
 	private static Team team;
 	public static Team Team => team;
@@ -23,6 +20,11 @@ public static class MatchManager {
 	public static UnityEvent<MatchSaveData> OnNewData { get; } = new UnityEvent<MatchSaveData>();
 
 	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.activePlayer;
+
+	public static void OpenGame(string newMatchID) {
+		matchID = newMatchID;
+		SceneManager.LoadScene(2);
+	}
 
 	public static bool SubscribeToMatchUpdates() {
 		if (matchID == default) return false;
@@ -39,7 +41,7 @@ public static class MatchManager {
 
 	private static void HandleMatchUpdate(MatchSaveData newData) {
 		data = newData;
-		team = ServiceLocator.Auth.UserID == data.playerOne ? Team.White : Team.Black;
+		team = ServiceLocator.Auth.UserID == data.playerOneID ? Team.White : Team.Black;
 
 		Debug.Log("[Match] Received an update");
 		OnNewData.Invoke(data);
@@ -48,9 +50,9 @@ public static class MatchManager {
 	public static void UpdateMatch(List<ICommand> commands) {
 		data.commands = commands.Select(x => new CommandSaveData(x)).ToList();
 		data.turnCount++;
-		data.activePlayer = data.activePlayer == data.playerOne
-			? data.playerTwo
-			: data.playerOne;
+		data.activePlayer = data.activePlayer == data.playerOneID
+			? data.playerTwoID
+			: data.playerOneID;
 		data.lastUpdated = DateTime.UtcNow.ToString("u");
 
 		ServiceLocator.DB.UpdateMatch(matchID, data);

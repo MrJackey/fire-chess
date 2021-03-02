@@ -15,14 +15,26 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		matchSubscriptions = new List<EventHandler<ValueChangedEventArgs>>();
 	}
 
-	public async Task<string> CreateMatch(string playerOne, string playerTwo, bool randomizeTeams = true) {
+	private async Task<UserSaveData> GetUser(string userID) {
+		DataSnapshot snap = await db.RootReference.Child("users").Child(userID).GetValueAsync();
+		return JsonConvert.DeserializeObject<UserSaveData>(snap.GetRawJsonValue());
+	}
+
+	public async Task UpdateUser(string userID, UserSaveData data) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
 
-		MatchSaveData newMatchData = new MatchSaveData(playerOne, playerTwo, randomizeTeams);
+		await db.RootReference.Child("users").Child(userID).SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
+	}
 
-		Debug.Log("[DB] Creating match");
+	public async Task<string> CreateMatch(string creatorID, string opponentID, bool randomizeTeams = true) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		UserSaveData opponentData = await GetUser(opponentID);
+		MatchSaveData newMatchData = new MatchSaveData(creatorID, ServiceLocator.Auth.DisplayName, opponentID, opponentData.displayName, randomizeTeams);
 
 		string json = JsonUtility.ToJson(newMatchData);
 		Debug.Log(json);
@@ -31,7 +43,6 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		string key = matchRef.Key;
 		await matchRef.SetRawJsonValueAsync(json);
 
-		Debug.Log("[DB] Successfully created a match");
 		return key;
 	}
 
@@ -40,41 +51,37 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		Debug.Log("[DB] Fetching matches");
-
 		DataSnapshot snap1 = await db.RootReference.Child("matches")
 	// #if !UNITY_EDITOR
-	// 		.OrderByChild(nameof(MatchSaveData.playerOne))
-	// 		.EqualTo(userID)
+			.OrderByChild(nameof(MatchSaveData.playerOneID))
+			.EqualTo(userID)
 	// #endif
 			.GetValueAsync();
 
 	// #if !UNITY_EDITOR
-	// 	DataSnapshot snap2 = await db.RootReference.Child("matches")
-	// 		.OrderByChild(nameof(MatchSaveData.playerTwo))
-	// 		.EqualTo(userID)
-	// 		.GetValueAsync();
+		DataSnapshot snap2 = await db.RootReference.Child("matches")
+			.OrderByChild(nameof(MatchSaveData.playerTwoID))
+			.EqualTo(userID)
+			.GetValueAsync();
 	// #endif
-
-		Debug.Log("[DB] Successfully fetched matches");
 
 		Dictionary<string, MatchSaveData> matchesAsPlayerOne =
 			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue());
 	// #if !UNITY_EDITOR
-	// 	Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
-	// 		JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
+		Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
+			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
 	// #endif
 
 	// #if UNITY_EDITOR
 		// Client side querying instead of server-side
-		return matchesAsPlayerOne
-			.Where(pair => pair.Value.playerOne == userID || pair.Value.playerTwo == userID)
-			.GroupBy(pair => pair.Key)
-			.Select(group => group.First())
-			.ToArray();
+		// return matchesAsPlayerOne
+		// 	.Where(pair => pair.Value.playerOneID == userID || pair.Value.playerTwoID == userID)
+		// 	.GroupBy(pair => pair.Key)
+		// 	.Select(group => group.First())
+		// 	.ToArray();
 	// #else
 		// If serverside querying works
-	// 	return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
+		return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
 	// #endif
 	}
 

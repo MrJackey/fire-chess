@@ -2,12 +2,12 @@
 
 [Serializable]
 public class LobbySaveData {
-	public string lobbyOwner;
+	public string lobbyOwnerID;
 	public bool isFull;
 	public string matchID;
 
 	public LobbySaveData(string userID) {
-		lobbyOwner = userID;
+		this.lobbyOwnerID = userID;
 	}
 }
 

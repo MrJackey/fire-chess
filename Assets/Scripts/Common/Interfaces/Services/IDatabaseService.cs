@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public interface IDatabaseService {
-	Task<string> CreateMatch(string playerOne, string playerTwo, bool randomizeTeams = true);
+	Task UpdateUser(string userID, UserSaveData data);
+	Task<string> CreateMatch(string creatorID, string opponentID, bool randomizeTeams = true);
 	Task<KeyValuePair<string, MatchSaveData>[]> GetMatches(string userID);
 
 	void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> onUpdate);

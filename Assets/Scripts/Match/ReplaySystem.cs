@@ -11,7 +11,7 @@ public class ReplaySystem : MonoBehaviour {
 	[SerializeField] private ChessBoard board;
 
 	[Header("UI")]
-	[SerializeField] private TMP_Text text;
+	[SerializeField] private TMP_Text activePlayerTurn;
 	[SerializeField] private Slider slider;
 	[SerializeField] private GameObject newMovesNotification;
 
@@ -55,7 +55,7 @@ public class ReplaySystem : MonoBehaviour {
 		bool wasLive = IsLive;
 		commands = data.commands.Select(x => x.Deserialized()).ToList();
 		slider.maxValue = commands.Count;
-		text.text = data.activePlayer;
+		activePlayerTurn.text = MatchManager.IsMyTurn ? "Your Turn" : $"{data.OpponentName}'s Turn";
 
 		if (wasLive) {
 			StartCoroutine(CoShowCommands(commands.Count, 1));

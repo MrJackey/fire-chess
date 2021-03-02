@@ -22,11 +22,7 @@ public class Matchmaking : MonoBehaviour {
 			lobbyID = default;
 		}
 
-		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID,
-			(matchID) => {
-				MatchManager.MatchID = matchID;
-				SceneManager.LoadScene(2);
-			});
+		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID, MatchManager.OpenGame);
 
 		lobbyIDText.text = lobbyID;
 		GUIUtility.systemCopyBuffer = lobbyID;
@@ -49,8 +45,7 @@ public class Matchmaking : MonoBehaviour {
 		string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
 		await ServiceLocator.Matchmaking.AddMatchToLobby(otherLobbyID, matchID);
 
-		MatchManager.MatchID = matchID;
-		SceneManager.LoadScene(2);
+		MatchManager.OpenGame(matchID);
 	}
 
 	private void HandleFailJoinLobby() {

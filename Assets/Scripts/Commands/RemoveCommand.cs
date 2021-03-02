@@ -16,10 +16,10 @@ public class RemoveCommand : ICommand {
 	public bool DoStep => true;
 
 	public void Do(ChessBoard board) {
-		board.DestroyPiece(position.AsInt());
+		board.DestroyPiece(position.FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {
-		board.GeneratePiece(piece, team, position.AsInt());
+		board.GeneratePiece(piece, team, position.FloorToInt());
 	}
 }

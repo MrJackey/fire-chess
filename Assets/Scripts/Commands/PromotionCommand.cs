@@ -18,12 +18,12 @@ public class PromotionCommand : ICommand {
 	public bool DoStep => true;
 
 	public void Do(ChessBoard board) {
-		board.DestroyPiece(pawnPosition.AsInt());
-		board.GeneratePiece(promoteTo, team, promotePosition.AsInt());
+		board.DestroyPiece(pawnPosition.FloorToInt());
+		board.GeneratePiece(promoteTo, team, promotePosition.FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {
-		board.DestroyPiece(promotePosition.AsInt());
-		board.GeneratePiece(PieceType.Pawn, team, pawnPosition.AsInt());
+		board.DestroyPiece(promotePosition.FloorToInt());
+		board.GeneratePiece(PieceType.Pawn, team, pawnPosition.FloorToInt());
 	}
 }

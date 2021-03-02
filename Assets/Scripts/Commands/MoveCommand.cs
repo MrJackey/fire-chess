@@ -14,10 +14,10 @@ public class MoveCommand : ICommand {
 	public bool DoStep => false;
 
 	public void Do(ChessBoard board) {
-		board.MovePiece(from.AsInt(), to.AsInt());
+		board.MovePiece(from.FloorToInt(), to.FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {
-		board.MovePiece(to.AsInt(), from.AsInt());
+		board.MovePiece(to.FloorToInt(), from.FloorToInt());
 	}
 }

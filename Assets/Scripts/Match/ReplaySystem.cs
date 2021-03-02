@@ -22,7 +22,6 @@ public class ReplaySystem : MonoBehaviour {
 	public List<ICommand> Commands => commands;
 
 	private List<ICommand> newCommands;
-
 	private int currentCommandIndex;
 	public bool IsLive => currentCommandIndex == commands.Count - 1;
 
@@ -54,22 +53,27 @@ public class ReplaySystem : MonoBehaviour {
 	private void HandleNewData(MatchSaveData data) {
 		bool wasLive = IsLive;
 		commands = data.commands.Select(x => x.Deserialized()).ToList();
-		slider.maxValue = commands.Count;
+		slider.maxValue = commands.Count - 1;
 		activePlayerTurn.text = MatchManager.IsMyTurn ? "Your Turn" : $"{data.OpponentName}'s Turn";
 
 		if (wasLive) {
-			StartCoroutine(CoShowCommands(commands.Count, 1));
+			if (currentCommandIndex == -1 || MatchManager.IsMyTurn) {
+				StartCoroutine(CoShowCommands(commands.Count - 1, 1));
+			}
 		}
 		else {
 			NotificationManager.Instance.AddNotification("Your opponent has made a new move");
 			newMovesNotification.SetActive(true);
 		}
+
+		UpdateSlider();
 	}
 
 	public void AddCommand(ICommand command) {
 		if (!IsLive) return;
 
 		newCommands.Add(command);
+		command.Do(board);
 	}
 
 	private void PlayCommands(int target, int direction) {
@@ -140,7 +144,7 @@ public class ReplaySystem : MonoBehaviour {
 	}
 
 	private void UpdateSlider() {
-		slider.value = currentCommandIndex + 1;
+		slider.value = currentCommandIndex;
 	}
 
 	#region UI Events
@@ -161,10 +165,12 @@ public class ReplaySystem : MonoBehaviour {
 	}
 
 	public void StepForward() {
+		PrepareReplayUpdate();
 		GoForward();
 	}
 
 	public void ToEnd() {
+		PrepareReplayUpdate();
 		PlayCommands(commands.Count - 1, 1);
 	}
 
@@ -174,7 +180,7 @@ public class ReplaySystem : MonoBehaviour {
 	}
 
 	private void HandleSliderUpdated(float value) {
-		int nextTarget = (int)value - 1;
+		int nextTarget = (int)value;
 		if (nextTarget == currentCommandIndex) return;
 
 		StopAllCoroutines();
@@ -185,7 +191,15 @@ public class ReplaySystem : MonoBehaviour {
 	#endregion
 
 	public void Save() {
+		currentCommandIndex += newCommands.Count;
 		MatchManager.UpdateMatch(commands.Concat(newCommands).ToList());
+		newCommands.Clear();
+	}
+
+	public void ClearNewCommands() {
+		for (int i = newCommands.Count - 1; i >= 0; i--) {
+			newCommands[i].Undo(board);
+		}
 		newCommands.Clear();
 	}
 }

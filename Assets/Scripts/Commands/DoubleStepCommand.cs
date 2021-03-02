@@ -17,7 +17,7 @@ public class DoubleStepCommand : ICommand {
 
 	public void Do(ChessBoard board) {
 		pawnMove.Do(board);
-		board.EnablePassant(skippedPosition.AsInt(), (skippedPosition + Vector2.up * (int)pawnTeam).AsInt());
+		board.EnablePassant(skippedPosition.FloorToInt(), (skippedPosition + Vector2.up * (int)pawnTeam).FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {

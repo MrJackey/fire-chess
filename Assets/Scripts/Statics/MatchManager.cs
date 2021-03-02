@@ -15,7 +15,7 @@ public static class MatchManager {
 	private static MatchSaveData data;
 
 	private static Team team;
-	public static Team Team => team;
+	public static Team MyTeam => team;
 
 	public static UnityEvent<MatchSaveData> OnNewData { get; } = new UnityEvent<MatchSaveData>();
 

@@ -33,15 +33,18 @@ public class ChessBoard : MonoBehaviour {
 	private ChessPiece selectedPiece;
 	private Passant passant;
 
+	private King whiteKing;
+	private King blackKing;
+
 	#region Initialization
 
 	private void Awake() {
 		boardSize = (8, 8);
 		board = new ChessPiece[boardSize.width, boardSize.height];
+		passant = new Passant();
 
 		tilemap = GetComponent<Tilemap>();
 		selectedParticleSystem.Stop();
-		passant = new Passant();
 
 		GenerateBoard();
 	}
@@ -76,11 +79,11 @@ public class ChessBoard : MonoBehaviour {
 		GeneratePiece(blackQueenPrefab, new Vector2Int(3, 7));
 
 		// Kings
-		GeneratePiece(whiteKingPrefab, new Vector2Int(4, 0));
-		GeneratePiece(blackKingPrefab, new Vector2Int(4, 7));
+		whiteKing = (King)GeneratePiece(whiteKingPrefab, new Vector2Int(4, 0));
+		blackKing = (King)GeneratePiece(blackKingPrefab, new Vector2Int(4, 7));
 	}
 
-	private void GeneratePiece(ChessPiece prefab, Vector2Int gridPosition) {
+	private ChessPiece GeneratePiece(ChessPiece prefab, Vector2Int gridPosition) {
 		Vector3 worldPosition = tilemap.GetCellCenterWorld((Vector3Int)gridPosition);
 		ChessPiece piece = Instantiate(prefab, worldPosition, Quaternion.identity);
 
@@ -88,6 +91,7 @@ public class ChessBoard : MonoBehaviour {
 		piece.Position = gridPosition;
 
 		board[gridPosition.x, gridPosition.y] = piece;
+		return piece;
 	}
 	
 	public void GeneratePiece(PieceType piece, Team team, Vector2Int gridPosition) {
@@ -110,9 +114,9 @@ public class ChessBoard : MonoBehaviour {
 
 	#region BoardHelpers
 
-	private bool PositionIsOnBoard(Vector2 worldPosition) {
-		return !(worldPosition.x < 0) && !(worldPosition.x > boardSize.width) &&
-		       !(worldPosition.y < 0) && !(worldPosition.y > boardSize.height);
+	private bool IsPositionIsOnBoard(Vector2 worldPosition) {
+		return !(worldPosition.x < 0) && !(worldPosition.x >= boardSize.width) &&
+		       !(worldPosition.y < 0) && !(worldPosition.y >= boardSize.height);
 	}
 
 	private Vector2Int WorldToBoard(Vector3 worldPosition) {
@@ -127,15 +131,21 @@ public class ChessBoard : MonoBehaviour {
 	#endregion
 
 	public void HandlePlayerInput(Vector3 worldClick) {
-		if (!PositionIsOnBoard(worldClick)) return;
+		if (!IsPositionIsOnBoard(worldClick)) return;
 		if (!replay.IsLive) return;
 		// if (!MatchManager.IsMyTurn) return;
 
 		Vector2Int boardClick = WorldToBoard(worldClick);
+		Debug.Log(boardClick);
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
-		if (clickedPiece != null && clickedPiece.Team == MatchManager.Team) {
-			SelectPiece(clickedPiece);
+		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
+			if (clickedPiece == selectedPiece) {
+				DeselectPiece();
+			}
+			else {
+				SelectPiece(clickedPiece);
+			}
 			return;
 		}
 
@@ -197,11 +207,73 @@ public class ChessBoard : MonoBehaviour {
 				throw new ArgumentOutOfRangeException();
 		}
 
+		// Prevent checking your own king
+		King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
+		if (IsChecked(myKing)) {
+			replay.ClearNewCommands();
+			NotificationManager.Instance.AddNotification("You are not allowed to check yourself");
+			return false;
+		}
+
+		King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
+		if (IsChecked(opposingKing)) {
+			NotificationManager.Instance.AddNotification("CHECK!!!");
+		}
+
 		return true;
 	}
 
 	private bool IsPathObstructed(IEnumerable<Vector2Int> path) {
 		return path.Any(coord => board[coord.x, coord.y] != null);
+	}
+
+	private bool IsChecked(King king) {
+		// check all directions
+		for (float i = 0; i < Mathf.PI * 2; i += Mathf.PI / 4) {
+			Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).CeilToInt();
+			ChessPiece closestPiece = GetClosestPiece(king.Position, direction);
+			if (closestPiece == null || closestPiece.Team == king.Team) {
+				continue;
+			}
+
+			if (closestPiece.TryMoveTo(king.Position, false, out List<Vector2Int> path) ==
+			    MoveType.None) {
+				continue;
+			}
+
+			if (!IsPathObstructed(path)) {
+				return true;
+			}
+		}
+
+		// check all possible knights
+		IEnumerable<Knight> opposingKnights = (IEnumerable<Knight>)board.Enumerate().Where(x => x is Knight && x.Team != king.Team);
+		foreach (Knight knight in opposingKnights) {
+			if (knight == null) continue;
+
+			if (knight.TryMoveTo(king.Position, false, out List<Vector2Int> path) == MoveType.None) {
+				continue;
+			}
+
+			if (!IsPathObstructed(path)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private ChessPiece GetClosestPiece(Vector2Int position, Vector2Int direction) {
+		Vector2Int nextPosition = position + direction;
+		while (IsPositionIsOnBoard(nextPosition)) {
+			if (board[nextPosition.x, nextPosition.y] != null) {
+				return board[nextPosition.x, nextPosition.y];
+			}
+
+			nextPosition += direction;
+		}
+
+		return null;
 	}
 
 	#region Actions

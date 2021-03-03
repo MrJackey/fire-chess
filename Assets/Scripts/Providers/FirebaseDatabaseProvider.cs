@@ -16,6 +16,10 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 	}
 
 	private async Task<UserSaveData> GetUser(string userID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
 		DataSnapshot snap = await db.RootReference.Child("users").Child(userID).GetValueAsync();
 		return JsonConvert.DeserializeObject<UserSaveData>(snap.GetRawJsonValue());
 	}
@@ -53,35 +57,35 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 
 		DataSnapshot snap1 = await db.RootReference.Child("matches")
 	// #if !UNITY_EDITOR
-			.OrderByChild(nameof(MatchSaveData.playerOneID))
-			.EqualTo(userID)
+			// .OrderByChild(nameof(MatchSaveData.playerOneID))
+			// .EqualTo(userID)
 	// #endif
 			.GetValueAsync();
 
 	// #if !UNITY_EDITOR
-		DataSnapshot snap2 = await db.RootReference.Child("matches")
-			.OrderByChild(nameof(MatchSaveData.playerTwoID))
-			.EqualTo(userID)
-			.GetValueAsync();
+		// DataSnapshot snap2 = await db.RootReference.Child("matches")
+		// 	.OrderByChild(nameof(MatchSaveData.playerTwoID))
+		// 	.EqualTo(userID)
+		// 	.GetValueAsync();
 	// #endif
 
 		Dictionary<string, MatchSaveData> matchesAsPlayerOne =
 			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue());
 	// #if !UNITY_EDITOR
-		Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
-			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
+		// Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
+		// 	JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
 	// #endif
 
 	// #if UNITY_EDITOR
 		// Client side querying instead of server-side
-		// return matchesAsPlayerOne
-		// 	.Where(pair => pair.Value.playerOneID == userID || pair.Value.playerTwoID == userID)
-		// 	.GroupBy(pair => pair.Key)
-		// 	.Select(group => group.First())
-		// 	.ToArray();
+		return matchesAsPlayerOne
+			.Where(pair => pair.Value.playerOneID == userID || pair.Value.playerTwoID == userID)
+			.GroupBy(pair => pair.Key)
+			.Select(group => group.First())
+			.ToArray();
 	// #else
 		// If serverside querying works
-		return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
+		// return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
 	// #endif
 	}
 

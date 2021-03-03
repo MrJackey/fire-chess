@@ -1107,11 +1107,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1070586465498784923, guid: 92db74a77d728124ab15bb8f7b721087, type: 3}
       propertyPath: m_text
-      value: Find a new match
-      objectReference: {fileID: 0}
-    - target: {fileID: 4445496979193015024, guid: 92db74a77d728124ab15bb8f7b721087, type: 3}
-      propertyPath: m_Interactable
-      value: 0
+      value: Search Match
       objectReference: {fileID: 0}
     - target: {fileID: 4445496979193015024, guid: 92db74a77d728124ab15bb8f7b721087, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -2355,9 +2351,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84abeeaa738e8b749b61134da0f90338, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  matchBrowser: {fileID: 876519866}
   lobbyIDText: {fileID: 1076505234}
   privateLobbyInputField: {fileID: 679775932}
+  searchGameButtonText: {fileID: 1976193624}
+--- !u!114 &1976193624 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1070586465498784923, guid: 92db74a77d728124ab15bb8f7b721087, type: 3}
+  m_PrefabInstance: {fileID: 911680875}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3451411986587315903
 PrefabInstance:
   m_ObjectHideFlags: 0

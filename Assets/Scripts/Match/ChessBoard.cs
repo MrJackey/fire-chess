@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -136,7 +137,6 @@ public class ChessBoard : MonoBehaviour {
 		// if (!MatchManager.IsMyTurn) return;
 
 		Vector2Int boardClick = WorldToBoard(worldClick);
-		Debug.Log(boardClick);
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -247,7 +247,7 @@ public class ChessBoard : MonoBehaviour {
 		}
 
 		// check all possible knights
-		IEnumerable<Knight> opposingKnights = (IEnumerable<Knight>)board.Enumerate().Where(x => x is Knight && x.Team != king.Team);
+		IEnumerable opposingKnights = board.Enumerate().Where(x => x is Knight && x.Team != king.Team);
 		foreach (Knight knight in opposingKnights) {
 			if (knight == null) continue;
 

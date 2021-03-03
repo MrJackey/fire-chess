@@ -3,7 +3,7 @@ using Firebase.Auth;
 using UnityEngine;
 
 public class FirebaseAuthProvider : IAuthService {
-	private FirebaseAuth auth;
+	private readonly FirebaseAuth auth;
 
 	public string UserID => auth.CurrentUser.UserId;
 	public string DisplayName => auth.CurrentUser.DisplayName;

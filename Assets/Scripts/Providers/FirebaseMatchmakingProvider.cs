@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Firebase.Database;
 using Newtonsoft.Json;
 using UnityEngine;
 
 public class FirebaseMatchmakingProvider : IMatchmakingService {
-	private FirebaseDatabase db;
+	private readonly FirebaseDatabase db;
 
 	private EventHandler<ValueChangedEventArgs> privateLobbySubscription;
+	private EventHandler<ValueChangedEventArgs> publicLobbySubscription;
+
+	private string publicLobbyID;
 
 	public FirebaseMatchmakingProvider() {
 		db = FirebaseDatabase.DefaultInstance;
@@ -19,27 +21,22 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			await FirebaseStatus.Initialization;
 		}
 
-		DatabaseReference lobbyRef = db.RootReference.Child("lobbies").Child("private").Push();
-
-		string json = JsonConvert.SerializeObject(new LobbySaveData(userID));
-
-		await lobbyRef.SetRawJsonValueAsync(json);
+		string lobbyID = await CreateLobby(userID, "lobbies/private");
 
 		async void HandleJoin(object obj, ValueChangedEventArgs args) {
 			if (args.DatabaseError != null) {
 				throw args.DatabaseError.ToException();
 			}
 
-			if (args.Snapshot.Value is string matchID) {
+			if (args.Snapshot.Child(nameof(LobbySaveData.matchID)).Value is string matchID) {
 				onJoin(matchID);
 				await DestroyPrivateLobby(args.Snapshot.Key);
 			}
 		}
 
-		lobbyRef.Child(nameof(LobbySaveData.matchID)).ValueChanged += HandleJoin;
+		db.RootReference.Child("lobbies").Child("private").Child(lobbyID).ValueChanged += HandleJoin;
 		privateLobbySubscription = HandleJoin;
-
-		return lobbyRef.Key;
+		return lobbyID;
 	}
 
 	public async Task DestroyPrivateLobby(string lobbyID) {
@@ -47,10 +44,43 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			await FirebaseStatus.Initialization;
 		}
 
-		db.RootReference.Child("lobbies").Child("private").Child(lobbyID).ValueChanged -= privateLobbySubscription;
+		await DestroyLobby($"lobbies/private/{lobbyID}", privateLobbySubscription);
 		privateLobbySubscription = null;
+	}
 
-		await db.RootReference.Child("lobbies").Child("private").Child(lobbyID).RemoveValueAsync();
+	public async Task AddMatchToPrivateLobby(string lobbyID, string matchID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		await AddMatchToLobby($"lobbies/private/{lobbyID}", matchID);
+	}
+
+	public async Task AddMatchToPublicLobby(string lobbyID, string matchID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		await AddMatchToLobby($"lobbies/public/{lobbyID}", matchID);
+	}
+
+	private async Task AddMatchToLobby(string path, string matchID) {
+		await db.RootReference.Child(path).Child(nameof(LobbySaveData.matchID)).SetValueAsync(matchID);
+	}
+
+	private async Task<string> CreateLobby(string userID, string path) {
+		DatabaseReference lobbyRef = db.RootReference.Child(path).Push();
+		string json = JsonConvert.SerializeObject(new LobbySaveData(userID));
+
+		await lobbyRef.SetRawJsonValueAsync(json);
+
+		return lobbyRef.Key;
+	}
+
+	private async Task DestroyLobby(string path, EventHandler<ValueChangedEventArgs> savedSubscription) {
+		db.RootReference.Child(path).ValueChanged -= savedSubscription;
+
+		await db.RootReference.Child(path).RemoveValueAsync();
 	}
 
 	public async void TryJoinPrivateLobby(string lobbyID, Action<string, string> onSuccess, Action onFailure) {
@@ -84,7 +114,78 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 		onFailure();
 	}
 
-	public async Task AddMatchToLobby(string lobbyID, string matchID) {
-		await db.RootReference.Child("lobbies").Child("private").Child(lobbyID).Child(nameof(LobbySaveData.matchID)).SetValueAsync(matchID);
+	public async void SearchPublicLobby(string userID, Action<string, string> onOthersLobby, Action<string> onLobbyJoined) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		if (publicLobbyID != default) {
+			await StopSearchPublicLobby();
+		}
+
+		DatabaseReference lobbiesRef = db.RootReference.Child("lobbies").Child("public");
+		string lobbyID = null;
+		string lobbyOwnerID = null;
+
+		try {
+			await lobbiesRef.RunTransaction(lobbiesData => {
+				if (lobbiesData.Value == null) return TransactionResult.Success(null);
+
+				foreach (MutableData data in lobbiesData.Children) {
+					if ((bool)data.Child(nameof(LobbySaveData.isFull)).Value == false) {
+						string lobbyOwner = (string)data.Child(nameof(LobbySaveData.lobbyOwnerID)).Value;
+
+						if (lobbyOwner != userID) {
+							data.Child(nameof(LobbySaveData.isFull)).Value = true;
+							lobbyID = data.Key;
+							lobbyOwnerID = lobbyOwner;
+							return TransactionResult.Success(lobbiesData);
+						}
+					}
+				}
+
+				return TransactionResult.Abort();
+			});
+
+			if (lobbyID != null) {
+					onOthersLobby(lobbyID, lobbyOwnerID);
+			}
+			else {
+				await CreatePublicLobby(userID, onLobbyJoined);
+			}
+		}
+		catch (DatabaseException) {
+			await CreatePublicLobby(userID, onLobbyJoined);
+		}
+	}
+
+	private async Task CreatePublicLobby(string userID, Action<string> onLobbyJoined) {
+		publicLobbyID = await CreateLobby(userID, "lobbies/public");
+
+		async void HandleJoin(object obj, ValueChangedEventArgs args) {
+			if (args.DatabaseError != null) {
+				throw args.DatabaseError.ToException();
+			}
+
+			if (args.Snapshot.Child(nameof(LobbySaveData.matchID)).Value is string matchID) {
+				await DestroyLobby($"lobbies/public/{args.Snapshot.Key}", publicLobbySubscription);
+				onLobbyJoined(matchID);
+			}
+		}
+
+		db.RootReference.Child("lobbies").Child("public").Child(publicLobbyID).ValueChanged += HandleJoin;
+		publicLobbySubscription = HandleJoin;
+	}
+
+	public async Task StopSearchPublicLobby() {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		if (publicLobbyID == default) return;
+
+		await DestroyLobby($"lobbies/public/{publicLobbyID}", publicLobbySubscription); ;
+		publicLobbySubscription = null;
+		publicLobbyID = default;
 	}
 }

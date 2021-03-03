@@ -1,18 +1,22 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Matchmaking : MonoBehaviour {
-	[SerializeField] private MatchBrowser matchBrowser;
 	[SerializeField] private TMP_Text lobbyIDText;
 	[SerializeField] private TMP_InputField privateLobbyInputField;
+	[SerializeField] private TMP_Text searchGameButtonText;
 
 	private string lobbyID;
+	private bool searching;
 
 	private async void OnDisable() {
 		if (lobbyID != default) {
 			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
 			lobbyID = default;
+		}
+
+		if (searching) {
+			await ServiceLocator.Matchmaking.StopSearchPublicLobby();
 		}
 	}
 
@@ -43,16 +47,30 @@ public class Matchmaking : MonoBehaviour {
 	private async void HandleSucceedJoinLobby(string otherLobbyID, string otherPlayerID) {
 		string userID = ServiceLocator.Auth.UserID;
 		string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
-		await ServiceLocator.Matchmaking.AddMatchToLobby(otherLobbyID, matchID);
+		await ServiceLocator.Matchmaking.AddMatchToPrivateLobby(otherLobbyID, matchID);
 
 		MatchManager.OpenGame(matchID);
 	}
 
 	private void HandleFailJoinLobby() {
-		Debug.Log("Something went wrong when trying to join the lobby, please try again");
+		NotificationManager.Instance.AddNotification("Something went wrong when trying to join the lobby, please try again");
 	}
 
-	public void FindPublicGame() {
+	public async void FindPublicGame() {
+		if (searching) {
+			await ServiceLocator.Matchmaking.StopSearchPublicLobby();
+			searching = false;
+			searchGameButtonText.text = "Search match";
+			return;
+		}
+		searching = true;
 
+		searchGameButtonText.text = "Searching...";
+		string userID = ServiceLocator.Auth.UserID;
+		ServiceLocator.Matchmaking.SearchPublicLobby(userID, async (otherLobbyID, otherPlayerID) => {
+			string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
+			await ServiceLocator.Matchmaking.AddMatchToPublicLobby(otherLobbyID, matchID);
+			MatchManager.OpenGame(matchID);
+		}, MatchManager.OpenGame);
 	}
 }

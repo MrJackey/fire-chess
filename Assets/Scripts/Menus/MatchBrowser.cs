@@ -18,7 +18,7 @@ public class MatchBrowser : MonoBehaviour {
 		KeyValuePair<string, MatchSaveData>[] matches = await ServiceLocator.DB.GetMatches(userID);
 
 		Array.Sort(matches, (current, next) =>
-			(int)(DateTime.Parse(next.Value.lastUpdated).Ticks - DateTime.Parse(current.Value.lastUpdated).Ticks));
+			(int)(DateTime.Parse(current.Value.lastUpdated).Ticks - DateTime.Parse(next.Value.lastUpdated).Ticks));
 
 		noMatchesInfo.SetActive(matches.Length < 1);
 		foreach ((string matchID, MatchSaveData data) in matches) {

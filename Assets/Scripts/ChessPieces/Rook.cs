@@ -10,7 +10,7 @@ public class Rook : ChessPiece {
 		if (!IsStraightPath(target)) return MoveType.None;
 
 		path = GetLinearPathTo(target);
-		return MoveType.None;
+		return MoveType.Move;
 	}
 
 	public override void MoveTo(Vector2Int target) {

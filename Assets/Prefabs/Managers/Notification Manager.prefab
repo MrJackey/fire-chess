@@ -140,7 +140,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Notification Manager
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 3527068486512014913, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
 --- !u!1 &307682595101555137 stripped
 GameObject:

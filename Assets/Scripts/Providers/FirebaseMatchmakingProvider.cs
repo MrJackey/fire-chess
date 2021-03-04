@@ -65,6 +65,10 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 	}
 
 	private async Task AddMatchToLobby(string path, string matchID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
 		await db.RootReference.Child(path).Child(nameof(LobbySaveData.matchID)).SetValueAsync(matchID);
 	}
 
@@ -114,7 +118,7 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 		onFailure();
 	}
 
-	public async void SearchPublicLobby(string userID, Action<string, string> onOthersLobby, Action<string> onLobbyJoined) {
+	public async Task SearchPublicLobby(string userID, Action<string> onJoin) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
@@ -129,6 +133,8 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 
 		try {
 			await lobbiesRef.RunTransaction(lobbiesData => {
+				lobbyID = null;
+				lobbyOwnerID = null;
 				if (lobbiesData.Value == null) return TransactionResult.Success(null);
 
 				foreach (MutableData data in lobbiesData.Children) {
@@ -148,14 +154,16 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			});
 
 			if (lobbyID != null) {
-					onOthersLobby(lobbyID, lobbyOwnerID);
+					string matchID = await ServiceLocator.DB.CreateMatch(userID, lobbyOwnerID);
+					await AddMatchToLobby($"lobbies/public/{lobbyID}", matchID);
+					onJoin(matchID);
 			}
 			else {
-				await CreatePublicLobby(userID, onLobbyJoined);
+				await CreatePublicLobby(userID, onJoin);
 			}
 		}
 		catch (DatabaseException) {
-			await CreatePublicLobby(userID, onLobbyJoined);
+			await CreatePublicLobby(userID, onJoin);
 		}
 	}
 

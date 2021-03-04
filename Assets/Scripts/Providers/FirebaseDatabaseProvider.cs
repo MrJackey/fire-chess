@@ -41,7 +41,6 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		MatchSaveData newMatchData = new MatchSaveData(creatorID, ServiceLocator.Auth.DisplayName, opponentID, opponentData.displayName, randomizeTeams);
 
 		string json = JsonUtility.ToJson(newMatchData);
-		Debug.Log(json);
 
 		DatabaseReference matchRef = db.RootReference.Child("matches").Push();
 		string key = matchRef.Key;

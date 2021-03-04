@@ -3,23 +3,25 @@ using UnityEngine;
 
 [Serializable]
 public class CastlingCommand : ICommand {
-	[SerializeField] private MoveCommand moveOne;
-	[SerializeField] private MoveCommand moveTwo;
+	[SerializeField] private Vector2 moveOneFrom;
+	[SerializeField] private Vector2 moveOneTo;
+	[SerializeField] private Vector2 moveTwoFrom;
+	[SerializeField] private Vector2 moveTwoTo;
 
-	public CastlingCommand(MoveCommand moveOne, MoveCommand moveTwo) {
-		this.moveOne = moveOne;
-		this.moveTwo = moveTwo;
+	public CastlingCommand(Vector2 moveOneFrom, Vector2 moveOneTo, Vector2 moveTwoFrom, Vector2 moveTwoTo) {
+		this.moveOneFrom = moveOneFrom;
+		this.moveOneTo = moveOneTo;
+		this.moveTwoFrom = moveTwoFrom;
+		this.moveTwoTo = moveTwoTo;
 	}
 
-	public bool DoStep => false;
-
 	public void Do(ChessBoard board) {
-		moveOne.Do(board);
-		moveTwo.Do(board);
+		board.MovePiece(moveOneFrom.FloorToInt(), moveOneTo.FloorToInt());
+		board.MovePiece(moveTwoFrom.FloorToInt(), moveTwoTo.FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {
-		moveOne.Undo(board);
-		moveTwo.Undo(board);
+		board.MovePiece(moveOneTo.FloorToInt(), moveOneFrom.FloorToInt());
+		board.MovePiece(moveTwoTo.FloorToInt(), moveTwoFrom.FloorToInt());
 	}
 }

@@ -56,7 +56,7 @@ public class ReplaySystem : MonoBehaviour {
 		slider.maxValue = commands.Count - 1;
 		activePlayerTurn.text = MatchManager.IsMyTurn ? "Your Turn" : $"{data.OpponentName}'s Turn";
 
-		if (wasLive) {
+		if (wasLive || IsLive) {
 			if (currentCommandIndex == -1 || MatchManager.IsMyTurn) {
 				StartCoroutine(CoShowCommands(commands.Count - 1, 1));
 			}
@@ -99,37 +99,20 @@ public class ReplaySystem : MonoBehaviour {
 	}
 
 	private void GoForward() {
-		while (true) {
-			if (IsLive) return;
+		if (IsLive) return;
 
-			ExecuteCommand(commands[currentCommandIndex + 1]);
+		ExecuteCommand(commands[currentCommandIndex + 1]);
 
-			if (IsLive) {
-				newMovesNotification.SetActive(false);
-			}
-
-			if (currentCommandIndex < commands.Count && commands[currentCommandIndex].DoStep) {
-				continue;
-			}
-
-			break;
+		if (IsLive) {
+			newMovesNotification.SetActive(false);
 		}
 	}
 
 	private void GoBack() {
-		while (true) {
-			if (currentCommandIndex < 0) return;
+		if (currentCommandIndex < 0) return;
 
-			StopAllCoroutines();
-			UndoCommand(commands[currentCommandIndex]);
-
-			if (currentCommandIndex >= 0 && commands[currentCommandIndex].DoStep) {
-				continue;
-			}
-
-			break;
-		}
-	}
+		UndoCommand(commands[currentCommandIndex]);
+}
 
 	private void ExecuteCommand(ICommand command) {
 		command.Do(board);
@@ -196,7 +179,7 @@ public class ReplaySystem : MonoBehaviour {
 		newCommands.Clear();
 	}
 
-	public void ClearNewCommands() {
+	public void RevertNewCommands() {
 		for (int i = newCommands.Count - 1; i >= 0; i--) {
 			newCommands[i].Undo(board);
 		}

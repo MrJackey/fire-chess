@@ -11,8 +11,6 @@ public class MoveCommand : ICommand {
 		this.to = to;
 	}
 
-	public bool DoStep => false;
-
 	public void Do(ChessBoard board) {
 		board.MovePiece(from.FloorToInt(), to.FloorToInt());
 	}

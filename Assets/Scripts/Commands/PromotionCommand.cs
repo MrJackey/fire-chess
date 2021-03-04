@@ -15,8 +15,6 @@ public class PromotionCommand : ICommand {
 		this.team = team;
 	}
 
-	public bool DoStep => true;
-
 	public void Do(ChessBoard board) {
 		board.DestroyPiece(pawnPosition.FloorToInt());
 		board.GeneratePiece(promoteTo, team, promotePosition.FloorToInt());

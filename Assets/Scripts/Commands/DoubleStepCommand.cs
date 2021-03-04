@@ -3,25 +3,25 @@ using UnityEngine;
 
 [Serializable]
 public class DoubleStepCommand : ICommand {
-	[SerializeField] private MoveCommand pawnMove;
+	[SerializeField] private Vector2 moveFrom;
+	[SerializeField] private Vector2 moveTo;
 	[SerializeField] private Team pawnTeam;
 	[SerializeField] private Vector2 skippedPosition;
 
-	public bool DoStep => false;
-
-	public DoubleStepCommand(MoveCommand pawnMove, Team pawnTeam, Vector2 skippedPosition) {
-		this.pawnMove = pawnMove;
+	public DoubleStepCommand(Vector2 moveFrom, Vector2 moveTo, Team pawnTeam) {
+		this.moveFrom = moveFrom;
+		this.moveTo = moveTo;
 		this.pawnTeam = pawnTeam;
-		this.skippedPosition = skippedPosition;
+		this.skippedPosition = this.moveTo - Vector2Int.up * (int)pawnTeam;
 	}
 
 	public void Do(ChessBoard board) {
-		pawnMove.Do(board);
+		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt());
 		board.EnablePassant(skippedPosition.FloorToInt(), (skippedPosition + Vector2.up * (int)pawnTeam).FloorToInt());
 	}
 
 	public void Undo(ChessBoard board) {
-		pawnMove.Undo(board);
+		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt());
 		board.DisablePassant();
 	}
 }

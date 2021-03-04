@@ -146,16 +146,18 @@ public class ChessBoard : MonoBehaviour {
 			else {
 				SelectPiece(clickedPiece);
 			}
+
 			return;
 		}
 
 		if (selectedPiece == null) return;
 
-		MoveType typeOfMove = selectedPiece.TryMoveTo(boardClick, clickedPiece == null, out List<Vector2Int> path);
+		MoveType typeOfMove =
+			selectedPiece.TryMoveTo(boardClick, clickedPiece == null, out List<Vector2Int> path);
 
 		if (typeOfMove == MoveType.None || IsPathObstructed(path)) return;
 
-		if (passant.Pawn != null && replay.Commands.LastOrDefault(x => x is DoubleStepCommand) != null) {
+		if (passant.Pawn != null && !(replay.Commands[replay.Commands.Count - 1] is DoubleStepCommand)) {
 			DisablePassant();
 		}
 
@@ -168,16 +170,29 @@ public class ChessBoard : MonoBehaviour {
 	private bool TryExecuteMove(MoveType typeOfMove, ChessPiece clickedPiece, Vector2Int boardClick) {
 		switch (typeOfMove) {
 			case MoveType.Move:
+				bool hasCaptured = false;
+				CaptureCommand captureCommand = null;
 				if (clickedPiece != null) {
-					replay.AddCommand(new RemoveCommand(boardClick, clickedPiece));
+					captureCommand = new CaptureCommand(selectedPiece.Position, boardClick, boardClick, clickedPiece);
+					replay.AddCommand(captureCommand);
+					hasCaptured = true;
 				}
 
 				if (selectedPiece is Pawn pawn && boardClick.y == (pawn.Team == Team.White ? boardSize.height - 1 : 0)) {
-					replay.AddCommand(new PromotionCommand(PieceType.Queen, selectedPiece.Position, boardClick, pawn.Team));
+					PromotionCommand promotionCommand = new PromotionCommand(PieceType.Queen, selectedPiece.Position, boardClick, pawn.Team);
+					if (hasCaptured) {
+						replay.RevertNewCommands();
+						replay.AddCommand(new CaptureAndPromoteCommand(captureCommand, promotionCommand));
+					}
+					else {
+						replay.AddCommand(new PromotionCommand(PieceType.Queen, selectedPiece.Position, boardClick, pawn.Team));
+					}
 					break;
 				}
 
-				replay.AddCommand(new MoveCommand(selectedPiece.Position, boardClick));
+				if (!hasCaptured) {
+					replay.AddCommand(new MoveCommand(selectedPiece.Position, boardClick));
+				}
 
 				break;
 			case MoveType.Castling:
@@ -197,8 +212,7 @@ public class ChessBoard : MonoBehaviour {
 					return false;
 				}
 
-				MoveCommand pawnMove = new MoveCommand(selectedPiece.Position, boardClick);
-				replay.AddCommand(new DoubleStepCommand(pawnMove, selectedPiece.Team, boardClick - Vector2Int.up * (int) selectedPiece.Team));
+				replay.AddCommand(new DoubleStepCommand(selectedPiece.Position, boardClick, selectedPiece.Team));
 
 				break;
 			case MoveType.None:
@@ -210,7 +224,7 @@ public class ChessBoard : MonoBehaviour {
 		// Prevent checking your own king
 		King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
 		if (IsChecked(myKing)) {
-			replay.ClearNewCommands();
+			replay.RevertNewCommands();
 			NotificationManager.Instance.AddNotification("You are not allowed to check yourself");
 			return false;
 		}
@@ -299,9 +313,7 @@ public class ChessBoard : MonoBehaviour {
 		if (cornerPiece == null || IsPathObstructed(selectedPiece.GetLinearPathTo(cornerPiece.Position))) return false;
 
 		if (cornerPiece is Rook rook && !rook.HasMoved) {
-			MoveCommand kingMove = new MoveCommand(selectedPiece.Position, boardClick);
-			MoveCommand rookMove = new MoveCommand(rook.Position, boardClick - Vector2Int.right * castlingDirection);
-			replay.AddCommand(new CastlingCommand(kingMove, rookMove));
+			replay.AddCommand(new CastlingCommand(selectedPiece.Position, boardClick, rook.Position,  boardClick - Vector2Int.right * castlingDirection));
 			return true;
 		}
 
@@ -311,9 +323,7 @@ public class ChessBoard : MonoBehaviour {
 	private bool TryEnPassant(Vector2Int boardClick) {
 		if (passant.Pawn == null || passant.Position != boardClick) return false;
 
-		RemoveCommand pawnRemove = new RemoveCommand(passant.Pawn.Position, passant.Pawn);
-		MoveCommand pawnMove = new MoveCommand(selectedPiece.Position, boardClick);
-		replay.AddCommand(new EnPassantCommand(pawnMove, pawnRemove));
+		replay.AddCommand(new CaptureCommand(selectedPiece.Position, boardClick, passant.Pawn.Position, passant.Pawn));
 
 		return true;
 	}

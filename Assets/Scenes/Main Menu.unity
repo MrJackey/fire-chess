@@ -2236,16 +2236,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
-      propertyPath: m_ContentType
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_KeyboardType
-      value: 7
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_CharacterValidation
-      value: 7
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7834705450636854404, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_Pivot.x

@@ -4,21 +4,19 @@ using UnityEngine;
 [Serializable]
 public class EnPassantCommand : ICommand {
 	[SerializeField] private MoveCommand pawnMove;
-	[SerializeField] private RemoveCommand pawnRemove;
+	[SerializeField] private CaptureCommand pawnCapture;
 
-	public bool DoStep => false;
-
-	public EnPassantCommand(MoveCommand pawnMove, RemoveCommand pawnRemove) {
+	public EnPassantCommand(MoveCommand pawnMove, CaptureCommand pawnCapture) {
 		this.pawnMove = pawnMove;
-		this.pawnRemove = pawnRemove;
+		this.pawnCapture = pawnCapture;
 	}
 	public void Do(ChessBoard board) {
 		pawnMove.Do(board);
-		pawnRemove.Do(board);
+		pawnCapture.Do(board);
 	}
 
 	public void Undo(ChessBoard board) {
 		pawnMove.Undo(board);
-		pawnRemove.Undo(board);
+		pawnCapture.Undo(board);
 	}
 }

@@ -7,7 +7,9 @@ public class Matchmaking : MonoBehaviour {
 	[SerializeField] private TMP_Text searchGameButtonText;
 
 	private string lobbyID;
-	private bool searching;
+	private bool isSettingUpSearch;
+	private bool isSearchingActive;
+	private bool isCreatingPrivateLobby;
 
 	private async void OnDisable() {
 		if (lobbyID != default) {
@@ -15,22 +17,26 @@ public class Matchmaking : MonoBehaviour {
 			lobbyID = default;
 		}
 
-		if (searching) {
+		if (isSettingUpSearch || isSearchingActive) {
 			await ServiceLocator.Matchmaking.StopSearchPublicLobby();
 		}
 	}
 
 	public async void CreatePrivateLobby() {
+		if (isCreatingPrivateLobby) return;
 		if (lobbyID != default) {
+			isCreatingPrivateLobby = true;
 			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
 			lobbyID = default;
 		}
 
+		isCreatingPrivateLobby = true;
 		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID, MatchManager.OpenGame);
 
 		lobbyIDText.text = lobbyID;
 		GUIUtility.systemCopyBuffer = lobbyID;
 		NotificationManager.Instance.AddNotification("Your lobby has been copied to clipboard");
+		isCreatingPrivateLobby = false;
 	}
 
 	public void JoinPrivateLobby() {
@@ -41,10 +47,10 @@ public class Matchmaking : MonoBehaviour {
 			return;
 		}
 
-		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleSucceedJoinLobby, HandleFailJoinLobby);
+		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleSucceedJoinPrivateLobby, HandleFailJoinLobby);
 	}
 
-	private async void HandleSucceedJoinLobby(string otherLobbyID, string otherPlayerID) {
+	private async void HandleSucceedJoinPrivateLobby(string otherLobbyID, string otherPlayerID) {
 		string userID = ServiceLocator.Auth.UserID;
 		string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
 		await ServiceLocator.Matchmaking.AddMatchToPrivateLobby(otherLobbyID, matchID);
@@ -57,20 +63,20 @@ public class Matchmaking : MonoBehaviour {
 	}
 
 	public async void FindPublicGame() {
-		if (searching) {
+		if (isSettingUpSearch) return;
+		if (isSearchingActive) {
 			await ServiceLocator.Matchmaking.StopSearchPublicLobby();
-			searching = false;
+			isSettingUpSearch = false;
+			isSearchingActive = false;
 			searchGameButtonText.text = "Search match";
 			return;
 		}
-		searching = true;
 
-		searchGameButtonText.text = "Searching...";
 		string userID = ServiceLocator.Auth.UserID;
-		ServiceLocator.Matchmaking.SearchPublicLobby(userID, async (otherLobbyID, otherPlayerID) => {
-			string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
-			await ServiceLocator.Matchmaking.AddMatchToPublicLobby(otherLobbyID, matchID);
-			MatchManager.OpenGame(matchID);
-		}, MatchManager.OpenGame);
+		isSettingUpSearch = true;
+		await ServiceLocator.Matchmaking.SearchPublicLobby(userID, MatchManager.OpenGame);
+		searchGameButtonText.text = "Searching...";
+		isSearchingActive = true;
+		isSettingUpSearch = false;
 	}
 }

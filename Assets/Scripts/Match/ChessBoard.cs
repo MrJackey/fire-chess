@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Tilemaps;
+using DG.Tweening;
 
 [RequireComponent(typeof(Grid))]
 public class ChessBoard : MonoBehaviour {
@@ -25,7 +25,10 @@ public class ChessBoard : MonoBehaviour {
 
 	[Space]
 	[SerializeField] private ReplaySystem replay;
+
+	[Header("VFX")]
 	[SerializeField] private ParticleSystem selectedParticleSystem;
+	[SerializeField] private float moveDuration = 0.75f;
 
 	private Grid grid;
 	private (int width, int height) boardSize;
@@ -86,6 +89,7 @@ public class ChessBoard : MonoBehaviour {
 
 	private ChessPiece GeneratePiece(ChessPiece prefab, Vector2Int gridPosition) {
 		Vector3 worldPosition = BoardToLocal(gridPosition);
+		worldPosition.y = prefab.transform.position.y;
 		ChessPiece piece = Instantiate(prefab, worldPosition, Quaternion.identity);
 
 		piece.transform.parent = transform;
@@ -329,7 +333,12 @@ public class ChessBoard : MonoBehaviour {
 
 	public void MovePiece(Vector2Int from, Vector2Int to) {
 		ChessPiece piece = board[from.x, from.y];
-		piece.transform.position = BoardToLocal(to);
+		Vector3 newPosition = BoardToLocal(to);
+		// All pieces except pawn is slightly bigger leading to sticking through the ground
+		newPosition.y = piece is Pawn ? 0 : 0.1722305f;
+
+		piece.gameObject.transform.DOKill();
+		piece.transform.DOLocalJump(newPosition, 5f, 1, moveDuration);
 
 		board[piece.Position.x, piece.Position.y] = null;
 		board[to.x, to.y] = piece;
@@ -337,7 +346,12 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	public void DestroyPiece(Vector2Int boardPosition) {
-		Destroy(board[boardPosition.x, boardPosition.y].gameObject);
+		ChessPiece piece = board[boardPosition.x, boardPosition.y];
+		GameObject go = piece.gameObject;
+
+		go.transform.DOKill();
+		Destroy(go);
+
 		board[boardPosition.x, boardPosition.y] = null;
 	}
 

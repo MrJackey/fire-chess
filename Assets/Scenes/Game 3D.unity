@@ -518,8 +518,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 1248240058}
   m_HandleRect: {fileID: 527630510}
   m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 1
+  m_MinValue: -1
+  m_MaxValue: 0
   m_WholeNumbers: 1
   m_Value: 0
   m_OnValueChanged:
@@ -759,7 +759,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6731519283173867678, guid: 077d770c9cad9ec4fb70f02b3c4d7037, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6731519283173867678, guid: 077d770c9cad9ec4fb70f02b3c4d7037, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2180,6 +2180,7 @@ MonoBehaviour:
   blackKingPrefab: {fileID: 4489850968730134362, guid: 861e95a585868b643bf2e4a1d0ae63b7, type: 3}
   replay: {fileID: 1508383947}
   selectedParticleSystem: {fileID: 831819354}
+  moveDuration: 0.75
 --- !u!156049354 &1776837861
 Grid:
   m_ObjectHideFlags: 0

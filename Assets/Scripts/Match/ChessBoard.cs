@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-[RequireComponent(typeof(Tilemap))]
+[RequireComponent(typeof(Grid))]
 public class ChessBoard : MonoBehaviour {
 	[Header("White Pieces")]
 	[SerializeField] private Pawn whitePawnPrefab;
@@ -27,7 +27,7 @@ public class ChessBoard : MonoBehaviour {
 	[SerializeField] private ReplaySystem replay;
 	[SerializeField] private ParticleSystem selectedParticleSystem;
 
-	private Tilemap tilemap;
+	private Grid grid;
 	private (int width, int height) boardSize;
 
 	private ChessPiece[,] board;
@@ -44,7 +44,7 @@ public class ChessBoard : MonoBehaviour {
 		board = new ChessPiece[boardSize.width, boardSize.height];
 		passant = new Passant();
 
-		tilemap = GetComponent<Tilemap>();
+		grid = GetComponent<Grid>();
 		selectedParticleSystem.Stop();
 
 		GenerateBoard();
@@ -85,7 +85,7 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	private ChessPiece GeneratePiece(ChessPiece prefab, Vector2Int gridPosition) {
-		Vector3 worldPosition = tilemap.GetCellCenterWorld((Vector3Int)gridPosition);
+		Vector3 worldPosition = BoardToLocal(gridPosition);
 		ChessPiece piece = Instantiate(prefab, worldPosition, Quaternion.identity);
 
 		piece.transform.parent = transform;
@@ -115,28 +115,27 @@ public class ChessBoard : MonoBehaviour {
 
 	#region BoardHelpers
 
-	private bool IsPositionIsOnBoard(Vector2 worldPosition) {
-		return !(worldPosition.x < 0) && !(worldPosition.x >= boardSize.width) &&
-		       !(worldPosition.y < 0) && !(worldPosition.y >= boardSize.height);
+	private bool IsPositionIsOnBoard(Vector2 position) {
+		return !(position.x < 0) && !(position.x >= boardSize.width) &&
+		       !(position.y < 0) && !(position.y >= boardSize.height);
 	}
 
 	private Vector2Int WorldToBoard(Vector3 worldPosition) {
-		Vector3Int boardPosition = tilemap.WorldToCell(worldPosition);
+		Vector3Int boardPosition = grid.WorldToCell(worldPosition);
 		return (Vector2Int)boardPosition;
 	}
 
-	private Vector3 BoardToWorld(Vector2Int boardPosition) {
-		return tilemap.GetCellCenterWorld((Vector3Int)boardPosition);
+	private Vector3 BoardToLocal(Vector2Int boardPosition) {
+		return grid.GetCellCenterLocal((Vector3Int) boardPosition);
 	}
 
 	#endregion
 
 	public void HandlePlayerInput(Vector3 worldClick) {
-		if (!IsPositionIsOnBoard(worldClick)) return;
+		Vector2Int boardClick = WorldToBoard(worldClick);
+		if (!IsPositionIsOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
 		// if (!MatchManager.IsMyTurn) return;
-
-		Vector2Int boardClick = WorldToBoard(worldClick);
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -294,7 +293,7 @@ public class ChessBoard : MonoBehaviour {
 
 	private void SelectPiece(ChessPiece piece) {
 		selectedPiece = piece;
-		selectedParticleSystem.transform.position = BoardToWorld(piece.Position);
+		selectedParticleSystem.transform.position = BoardToLocal(piece.Position);
 		selectedParticleSystem.Play();
 	}
 
@@ -330,7 +329,7 @@ public class ChessBoard : MonoBehaviour {
 
 	public void MovePiece(Vector2Int from, Vector2Int to) {
 		ChessPiece piece = board[from.x, from.y];
-		piece.transform.position = BoardToWorld(to);
+		piece.transform.position = BoardToLocal(to);
 
 		board[piece.Position.x, piece.Position.y] = null;
 		board[to.x, to.y] = piece;

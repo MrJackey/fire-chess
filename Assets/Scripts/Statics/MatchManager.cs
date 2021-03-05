@@ -23,7 +23,7 @@ public static class MatchManager {
 
 	public static void OpenGame(string newMatchID) {
 		matchID = newMatchID;
-		SceneManager.LoadScene(2);
+		SceneManager.LoadScene(3);
 	}
 
 	public static bool SubscribeToMatchUpdates() {

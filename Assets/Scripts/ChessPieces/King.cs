@@ -15,7 +15,9 @@ public class King : ChessPiece {
 			return path.Count < 1 ? MoveType.Move : MoveType.None;
 		}
 
-		return MoveType.Castling;
+		int yDifference = target.y - Position.y;
+
+		return yDifference == 0 ? MoveType.Castling : MoveType.None;
 	}
 
 	public override void MoveTo(Vector2Int target) {

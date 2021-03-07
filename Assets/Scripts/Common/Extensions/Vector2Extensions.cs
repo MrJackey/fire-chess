@@ -8,4 +8,8 @@ public static class Vector2Extensions {
 	public static Vector2Int CeilToInt(this Vector2 v) {
 		return new Vector2Int(Mathf.CeilToInt(v.x), Mathf.CeilToInt(v.y));
 	}
+
+	public static Vector2Int RoundToInt(this Vector2 v) {
+		return new Vector2Int(Mathf.RoundToInt(v.x), Mathf.RoundToInt(v.y));
+	}
 }

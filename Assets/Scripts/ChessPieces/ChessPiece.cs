@@ -24,6 +24,9 @@ public abstract class ChessPiece : MonoBehaviour {
 			_ => throw new ArgumentOutOfRangeException()
 	};
 
+	public MoveType TryMoveTo(Vector2Int target, bool isVacant) {
+		return TryMoveTo(target, isVacant, out List<Vector2Int> path);
+	}
 	public abstract MoveType TryMoveTo(Vector2Int target, bool isVacant, out List<Vector2Int> path);
 
 	public virtual void MoveTo(Vector2Int newPosition) {

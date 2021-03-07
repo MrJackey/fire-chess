@@ -28,6 +28,7 @@ public class ChessBoard : MonoBehaviour {
 
 	[Header("VFX")]
 	[SerializeField] private ParticleSystem selectedParticleSystem;
+	[SerializeField] private ParticleSystem possibleMoveParticleSystem;
 	[SerializeField] private float moveDuration = 0.75f;
 	[SerializeField] private float jumpHeight = 2f;
 
@@ -41,7 +42,9 @@ public class ChessBoard : MonoBehaviour {
 	private King whiteKing;
 	private King blackKing;
 
-	#region Initialization
+	private ParticleSystem[] possibleMoveParticleSystems;
+
+#region Initialization
 
 	private void Awake() {
 		boardSize = (8, 8);
@@ -52,6 +55,13 @@ public class ChessBoard : MonoBehaviour {
 		selectedParticleSystem.Stop();
 
 		GenerateBoard();
+
+		possibleMoveParticleSystems = new ParticleSystem[21];
+		for (int i = 0; i < 21; i++) {
+			possibleMoveParticleSystems[i] = Instantiate(possibleMoveParticleSystem);
+			possibleMoveParticleSystems[i].transform.parent = transform;
+			possibleMoveParticleSystems[i].Stop();
+		}
 	}
 
 	private void GenerateBoard() {
@@ -115,11 +125,11 @@ public class ChessBoard : MonoBehaviour {
 		};
 	}
 
-	#endregion
+#endregion
 
-	#region BoardHelpers
+#region BoardHelpers
 
-	private bool IsPositionIsOnBoard(Vector2 position) {
+	private bool IsPositionOnBoard(Vector2 position) {
 		return !(position.x < 0) && !(position.x >= boardSize.width) &&
 		       !(position.y < 0) && !(position.y >= boardSize.height);
 	}
@@ -133,11 +143,12 @@ public class ChessBoard : MonoBehaviour {
 		return grid.GetCellCenterLocal((Vector3Int) boardPosition);
 	}
 
-	#endregion
+#endregion
 
+#region InputFlow
 	public void HandlePlayerInput(Vector3 worldClick) {
 		Vector2Int boardClick = WorldToBoard(worldClick);
-		if (!IsPositionIsOnBoard(boardClick)) return;
+		if (!IsPositionOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
 		// if (!MatchManager.IsMyTurn) return;
 
@@ -147,6 +158,7 @@ public class ChessBoard : MonoBehaviour {
 				DeselectPiece();
 			}
 			else {
+				DeselectPiece();
 				SelectPiece(clickedPiece);
 			}
 
@@ -232,6 +244,7 @@ public class ChessBoard : MonoBehaviour {
 			return false;
 		}
 
+		// Is the opponent's king checked?
 		King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
 		if (IsChecked(opposingKing)) {
 			NotificationManager.Instance.AddNotification("CHECK!!!");
@@ -240,6 +253,9 @@ public class ChessBoard : MonoBehaviour {
 		return true;
 	}
 
+#endregion
+
+#region Logic
 	private bool IsPathObstructed(IEnumerable<Vector2Int> path) {
 		return path.Any(coord => board[coord.x, coord.y] != null);
 	}
@@ -247,7 +263,7 @@ public class ChessBoard : MonoBehaviour {
 	private bool IsChecked(King king) {
 		// check all directions
 		for (float i = 0; i < Mathf.PI * 2; i += Mathf.PI / 4) {
-			Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).CeilToInt();
+			Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).RoundToInt();
 			ChessPiece closestPiece = GetClosestPiece(king.Position, direction);
 			if (closestPiece == null || closestPiece.Team == king.Team) {
 				continue;
@@ -268,42 +284,97 @@ public class ChessBoard : MonoBehaviour {
 		foreach (Knight knight in opposingKnights) {
 			if (knight == null) continue;
 
-			if (knight.TryMoveTo(king.Position, false, out List<Vector2Int> path) == MoveType.None) {
+			if (knight.TryMoveTo(king.Position, false) == MoveType.None) {
 				continue;
 			}
 
-			if (!IsPathObstructed(path)) {
-				return true;
-			}
+			return true;
 		}
 
 		return false;
 	}
 
 	private ChessPiece GetClosestPiece(Vector2Int position, Vector2Int direction) {
+		return GetClosestPiece(position, direction, out List<Vector2Int> _);
+	}
+
+	private ChessPiece GetClosestPiece(Vector2Int position, Vector2Int direction, out List<Vector2Int> path) {
+		path = new List<Vector2Int>();
 		Vector2Int nextPosition = position + direction;
-		while (IsPositionIsOnBoard(nextPosition)) {
+		while (IsPositionOnBoard(nextPosition)) {
 			if (board[nextPosition.x, nextPosition.y] != null) {
 				return board[nextPosition.x, nextPosition.y];
 			}
 
+			path.Add(nextPosition);
 			nextPosition += direction;
 		}
 
 		return null;
 	}
 
-	#region Actions
+	private List<Vector2Int> GetPossibleMoves(ChessPiece piece) {
+		List<Vector2Int> moves = new List<Vector2Int>();
+
+		if (piece is Knight knight) {
+			foreach (Vector2Int knightMove in knight.PossibleMoves) {
+				Vector2Int nextPosition = knight.Position + knightMove;
+				if (!IsPositionOnBoard(nextPosition)) continue;
+
+				ChessPiece otherPiece = board[nextPosition.x, nextPosition.y];
+				if (otherPiece != null && otherPiece.Team == knight.Team) continue;
+
+				moves.Add(nextPosition);
+			}
+		}
+		else {
+			float smallNumber = 0.000001f;
+
+			for (float i = 0; i < Mathf.PI * 2 - smallNumber; i += Mathf.PI / 4) {
+				Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).RoundToInt();
+				Vector2Int nextPosition = piece.Position + direction;
+
+				while (IsPositionOnBoard(nextPosition)) {
+					ChessPiece otherPiece = board[nextPosition.x, nextPosition.y];
+					if (otherPiece != null && otherPiece.Team == piece.Team) break;
+
+					MoveType move = piece.TryMoveTo(nextPosition, otherPiece == null, out List<Vector2Int> path);
+					if (move == MoveType.None) break;
+					if (move == MoveType.EnPassant && (passant.Position != nextPosition || passant?.Pawn.Team == piece.Team)) break;
+					if (IsPathObstructed(path)) break;
+
+					moves.Add(nextPosition);
+					nextPosition += direction;
+				}
+			}
+		}
+
+		return moves;
+	}
+
+#endregion
+
+#region Actions
 
 	private void SelectPiece(ChessPiece piece) {
 		selectedPiece = piece;
 		selectedParticleSystem.transform.position = BoardToLocal(piece.Position);
 		selectedParticleSystem.Play();
+
+		List<Vector2Int> possibleMoves = GetPossibleMoves(piece);
+		for (int i = 0; i < possibleMoves.Count; i++) {
+			possibleMoveParticleSystems[i].transform.position = BoardToLocal(possibleMoves[i]);
+			possibleMoveParticleSystems[i].Play();
+		}
 	}
 
 	public void DeselectPiece() {
 		selectedPiece = null;
 		selectedParticleSystem.Stop();
+
+		foreach (ParticleSystem moveParticleSystem in possibleMoveParticleSystems) {
+			moveParticleSystem.Stop();
+		}
 	}
 
 	private bool TryCastling(Vector2Int boardClick) {
@@ -324,7 +395,8 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	private bool TryEnPassant(Vector2Int boardClick) {
-		if (passant.Pawn == null || passant.Position != boardClick) return false;
+		if (passant.Pawn != null && passant.Pawn.Team == selectedPiece.Team) return false;
+		if (passant.Pawn == null || passant.Position != boardClick ) return false;
 
 		replay.AddCommand(new CaptureCommand(selectedPiece.Position, boardClick, passant.Pawn.Position, passant.Pawn));
 
@@ -360,7 +432,8 @@ public class ChessBoard : MonoBehaviour {
 
 	public void DisablePassant() {
 		passant.Pawn = null;
+		passant.Position = new Vector2Int(-1, -1);
 	}
 
-	#endregion
+#endregion
 }

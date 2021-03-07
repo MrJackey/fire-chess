@@ -29,6 +29,7 @@ public class ChessBoard : MonoBehaviour {
 	[Header("VFX")]
 	[SerializeField] private ParticleSystem selectedParticleSystem;
 	[SerializeField] private float moveDuration = 0.75f;
+	[SerializeField] private float jumpHeight = 2f;
 
 	private Grid grid;
 	private (int width, int height) boardSize;
@@ -89,8 +90,7 @@ public class ChessBoard : MonoBehaviour {
 
 	private ChessPiece GeneratePiece(ChessPiece prefab, Vector2Int gridPosition) {
 		Vector3 worldPosition = BoardToLocal(gridPosition);
-		worldPosition.y = prefab.transform.position.y;
-		ChessPiece piece = Instantiate(prefab, worldPosition, Quaternion.identity);
+		ChessPiece piece = Instantiate(prefab, worldPosition, prefab.transform.rotation);
 
 		piece.transform.parent = transform;
 		piece.Position = gridPosition;
@@ -334,11 +334,9 @@ public class ChessBoard : MonoBehaviour {
 	public void MovePiece(Vector2Int from, Vector2Int to) {
 		ChessPiece piece = board[from.x, from.y];
 		Vector3 newPosition = BoardToLocal(to);
-		// All pieces except pawn is slightly bigger leading to sticking through the ground
-		newPosition.y = piece is Pawn ? 0 : 0.1722305f;
 
 		piece.gameObject.transform.DOKill();
-		piece.transform.DOLocalJump(newPosition, 5f, 1, moveDuration);
+		piece.transform.DOLocalJump(newPosition, jumpHeight, 1, moveDuration);
 
 		board[piece.Position.x, piece.Position.y] = null;
 		board[to.x, to.y] = piece;

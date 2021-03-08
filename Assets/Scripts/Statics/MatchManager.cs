@@ -25,6 +25,7 @@ public static class MatchManager {
 		matchID = newMatchID;
 		try {
 			data = await ServiceLocator.DB.GetMatch(newMatchID);
+			team = ServiceLocator.Auth.UserID == data.playerOneID ? Team.White : Team.Black;
 			SceneManager.LoadScene(3);
 		}
 		catch {
@@ -47,7 +48,6 @@ public static class MatchManager {
 
 	private static void HandleMatchUpdate(MatchSaveData newData) {
 		data = newData;
-		team = ServiceLocator.Auth.UserID == data.playerOneID ? Team.White : Team.Black;
 
 		Debug.Log("[Match] Received an update");
 		OnNewData.Invoke(data);

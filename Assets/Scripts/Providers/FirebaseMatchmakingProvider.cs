@@ -7,7 +7,9 @@ using UnityEngine;
 public class FirebaseMatchmakingProvider : IMatchmakingService {
 	private readonly FirebaseDatabase db;
 
+	private DatabaseReference privateLobbyRef;
 	private EventHandler<ValueChangedEventArgs> privateLobbySubscription;
+	private DatabaseReference publicLobbyRef;
 	private EventHandler<ValueChangedEventArgs> publicLobbySubscription;
 
 	private string publicLobbyID;
@@ -30,38 +32,24 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 
 			if (args.Snapshot.Child(nameof(LobbySaveData.matchID)).Value is string matchID) {
 				onJoin(matchID);
-				await DestroyPrivateLobby(args.Snapshot.Key);
+				await DestroyPrivateLobby();
 			}
 		}
 
-		db.RootReference.Child("lobbies").Child("private").Child(lobbyID).ValueChanged += HandleJoin;
+		privateLobbyRef = db.GetReference($"lobbies/private/{lobbyID}");
+		privateLobbyRef.ValueChanged += HandleJoin;
 		privateLobbySubscription = HandleJoin;
 		return lobbyID;
 	}
 
-	public async Task DestroyPrivateLobby(string lobbyID) {
+	public async Task DestroyPrivateLobby() {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
 
-		await DestroyLobby($"lobbies/private/{lobbyID}", privateLobbySubscription);
+		await DestroyLobby(privateLobbyRef, privateLobbySubscription);
 		privateLobbySubscription = null;
-	}
-
-	public async Task AddMatchToPrivateLobby(string lobbyID, string matchID) {
-		if (!FirebaseStatus.Initialization.IsCompleted) {
-			await FirebaseStatus.Initialization;
-		}
-
-		await AddMatchToLobby($"lobbies/private/{lobbyID}", matchID);
-	}
-
-	public async Task AddMatchToPublicLobby(string lobbyID, string matchID) {
-		if (!FirebaseStatus.Initialization.IsCompleted) {
-			await FirebaseStatus.Initialization;
-		}
-
-		await AddMatchToLobby($"lobbies/public/{lobbyID}", matchID);
+		privateLobbyRef = null;
 	}
 
 	private async Task AddMatchToLobby(string path, string matchID) {
@@ -69,11 +57,11 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			await FirebaseStatus.Initialization;
 		}
 
-		await db.RootReference.Child(path).Child(nameof(LobbySaveData.matchID)).SetValueAsync(matchID);
+		await db.GetReference($"{path}/{nameof(LobbySaveData.matchID)}").SetValueAsync(matchID);
 	}
 
 	private async Task<string> CreateLobby(string userID, string path) {
-		DatabaseReference lobbyRef = db.RootReference.Child(path).Push();
+		DatabaseReference lobbyRef = db.GetReference(path).Push();
 		string json = JsonConvert.SerializeObject(new LobbySaveData(userID));
 
 		await lobbyRef.SetRawJsonValueAsync(json);
@@ -81,18 +69,18 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 		return lobbyRef.Key;
 	}
 
-	private async Task DestroyLobby(string path, EventHandler<ValueChangedEventArgs> savedSubscription) {
-		db.RootReference.Child(path).ValueChanged -= savedSubscription;
+	private async Task DestroyLobby(DatabaseReference lobbyRef, EventHandler<ValueChangedEventArgs> savedSubscription) {
+		lobbyRef.ValueChanged -= savedSubscription;
 
-		await db.RootReference.Child(path).RemoveValueAsync();
+		await lobbyRef.RemoveValueAsync();
 	}
 
-	public async void TryJoinPrivateLobby(string lobbyID, Action<string, string> onSuccess, Action onFailure) {
+	public async void TryJoinPrivateLobby(string lobbyID, Action onFailure) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
 
-		DatabaseReference lobbyRef = db.RootReference.Child("lobbies").Child("private").Child(lobbyID);
+		DatabaseReference lobbyRef = db.GetReference($"lobbies/private/{lobbyID}");
 
 		try {
 			DataSnapshot transactionResult = await lobbyRef.RunTransaction(lobbyData => {
@@ -107,7 +95,11 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			});
 
 			if (transactionResult.Value != null) {
-				onSuccess(lobbyID, transactionResult.Child(nameof(LobbySaveData.lobbyOwnerID)).Value.ToString());
+				string userID = ServiceLocator.Auth.UserID;
+				string opponentID = transactionResult.Child(nameof(LobbySaveData.lobbyOwnerID)).Value.ToString();
+				string matchID = await ServiceLocator.DB.CreateMatch(userID, opponentID);
+				await AddMatchToLobby($"lobbies/private/{lobbyID}", matchID);
+				MatchManager.OpenGame(matchID);
 				return;
 			}
 		}
@@ -127,7 +119,7 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			await StopSearchPublicLobby();
 		}
 
-		DatabaseReference lobbiesRef = db.RootReference.Child("lobbies").Child("public");
+		DatabaseReference lobbiesRef = db.GetReference("lobbies/public");
 		string lobbyID = null;
 		string lobbyOwnerID = null;
 
@@ -176,12 +168,15 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 			}
 
 			if (args.Snapshot.Child(nameof(LobbySaveData.matchID)).Value is string matchID) {
-				await DestroyLobby($"lobbies/public/{args.Snapshot.Key}", publicLobbySubscription);
+				await DestroyLobby(publicLobbyRef, publicLobbySubscription);
+				publicLobbySubscription = null;
+				publicLobbyID = default;
 				onLobbyJoined(matchID);
 			}
 		}
 
-		db.RootReference.Child("lobbies").Child("public").Child(publicLobbyID).ValueChanged += HandleJoin;
+		publicLobbyRef = db.GetReference($"lobbies/public/{publicLobbyID}");
+		publicLobbyRef.ValueChanged += HandleJoin;
 		publicLobbySubscription = HandleJoin;
 	}
 
@@ -192,7 +187,7 @@ public class FirebaseMatchmakingProvider : IMatchmakingService {
 
 		if (publicLobbyID == default) return;
 
-		await DestroyLobby($"lobbies/public/{publicLobbyID}", publicLobbySubscription); ;
+		await DestroyLobby(publicLobbyRef, publicLobbySubscription); ;
 		publicLobbySubscription = null;
 		publicLobbyID = default;
 	}

@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_RenderMode
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4946216865785167926, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
+      propertyPath: m_SortingOrder
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 6234615722075862591, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
       propertyPath: m_Pivot.x
       value: 0

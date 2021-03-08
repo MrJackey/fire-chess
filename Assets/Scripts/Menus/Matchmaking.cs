@@ -13,7 +13,7 @@ public class Matchmaking : MonoBehaviour {
 
 	private async void OnDisable() {
 		if (lobbyID != default) {
-			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
+			await ServiceLocator.Matchmaking.DestroyPrivateLobby();
 			lobbyID = default;
 		}
 
@@ -26,7 +26,7 @@ public class Matchmaking : MonoBehaviour {
 		if (isCreatingPrivateLobby) return;
 		if (lobbyID != default) {
 			isCreatingPrivateLobby = true;
-			await ServiceLocator.Matchmaking.DestroyPrivateLobby(lobbyID);
+			await ServiceLocator.Matchmaking.DestroyPrivateLobby();
 			lobbyID = default;
 		}
 
@@ -47,15 +47,7 @@ public class Matchmaking : MonoBehaviour {
 			return;
 		}
 
-		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleSucceedJoinPrivateLobby, HandleFailJoinLobby);
-	}
-
-	private async void HandleSucceedJoinPrivateLobby(string otherLobbyID, string otherPlayerID) {
-		string userID = ServiceLocator.Auth.UserID;
-		string matchID = await ServiceLocator.DB.CreateMatch(userID, otherPlayerID);
-		await ServiceLocator.Matchmaking.AddMatchToPrivateLobby(otherLobbyID, matchID);
-
-		MatchManager.OpenGame(matchID);
+		ServiceLocator.Matchmaking.TryJoinPrivateLobby(otherLobbyID, HandleFailJoinLobby);
 	}
 
 	private void HandleFailJoinLobby() {

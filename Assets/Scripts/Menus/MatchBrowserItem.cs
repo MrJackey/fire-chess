@@ -13,7 +13,7 @@ public class MatchBrowserItem : MonoBehaviour {
 		data = newData;
 
 		opponentNameText.text = data.OpponentName;
-		turnCountText.text = data.turnCount.ToString();
+		turnCountText.text = data.commands.Count.ToString();
 	}
 
 	public void EnterBoard() {

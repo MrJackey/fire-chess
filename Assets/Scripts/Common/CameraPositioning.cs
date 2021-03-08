@@ -4,15 +4,8 @@ public class CameraPositioning : MonoBehaviour {
 	[SerializeField] private Transform playerOneTransform;
 	[SerializeField] private Transform playerTwoTransform;
 
-	private void OnEnable() {
-		MatchManager.OnNewData.AddListener(Reposition);
-	}
 
-	private void OnDisable() {
-		MatchManager.OnNewData.RemoveListener(Reposition);
-	}
-
-	public void Reposition(MatchSaveData data) {
+	public void Start() {
 		if (MatchManager.MyTeam == Team.White) {
 			transform.SetPositionAndRotation(playerOneTransform.position, playerOneTransform.rotation);
 		}

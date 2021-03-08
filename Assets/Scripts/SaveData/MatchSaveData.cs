@@ -10,7 +10,6 @@ public class MatchSaveData {
 	public string playerTwoName;
 
 	public List<CommandSaveData> commands = new List<CommandSaveData>();
-	public int turnCount;
 	public string activePlayer;
 
 	public string lastUpdated;

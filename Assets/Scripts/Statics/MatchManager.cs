@@ -21,9 +21,15 @@ public static class MatchManager {
 
 	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.activePlayer;
 
-	public static void OpenGame(string newMatchID) {
+	public static async void OpenGame(string newMatchID) {
 		matchID = newMatchID;
-		SceneManager.LoadScene(3);
+		try {
+			data = await ServiceLocator.DB.GetMatch(newMatchID);
+			SceneManager.LoadScene(3);
+		}
+		catch {
+			NotificationManager.Instance.AddNotification("Something went wrong, unable to find the match");
+		}
 	}
 
 	public static bool SubscribeToMatchUpdates() {
@@ -49,7 +55,6 @@ public static class MatchManager {
 
 	public static void UpdateMatch(List<ICommand> commands) {
 		data.commands = commands.Select(x => new CommandSaveData(x)).ToList();
-		data.turnCount++;
 		data.activePlayer = data.activePlayer == data.playerOneID
 			? data.playerTwoID
 			: data.playerOneID;

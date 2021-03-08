@@ -8,11 +8,12 @@ using Newtonsoft.Json;
 
 public class FirebaseDatabaseProvider : IDatabaseService {
 	private readonly FirebaseDatabase db;
-	private List<EventHandler<ValueChangedEventArgs>> matchSubscriptions;
+
+	private EventHandler<ValueChangedEventArgs> matchSubscription;
+	private DatabaseReference matchReference;
 
 	public FirebaseDatabaseProvider() {
 		this.db = FirebaseDatabase.DefaultInstance;
-		matchSubscriptions = new List<EventHandler<ValueChangedEventArgs>>();
 	}
 
 	private async Task<UserSaveData> GetUser(string userID) {
@@ -20,7 +21,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		DataSnapshot snap = await db.RootReference.Child("users").Child(userID).GetValueAsync();
+		DataSnapshot snap = await db.GetReference($"users/{userID}").GetValueAsync();
 		return JsonConvert.DeserializeObject<UserSaveData>(snap.GetRawJsonValue());
 	}
 
@@ -29,7 +30,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		await db.RootReference.Child("users").Child(userID).SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
+		await db.GetReference($"users/{userID}").SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
 	}
 
 	public async Task<string> CreateMatch(string creatorID, string opponentID, bool randomizeTeams = true) {
@@ -42,7 +43,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 
 		string json = JsonUtility.ToJson(newMatchData);
 
-		DatabaseReference matchRef = db.RootReference.Child("matches").Push();
+		DatabaseReference matchRef = db.GetReference("matches").Push();
 		string key = matchRef.Key;
 		await matchRef.SetRawJsonValueAsync(json);
 
@@ -54,7 +55,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		DataSnapshot snap1 = await db.RootReference.Child("matches")
+		DataSnapshot snap1 = await db.GetReference("matches")
 	// #if !UNITY_EDITOR
 			// .OrderByChild(nameof(MatchSaveData.playerOneID))
 			// .EqualTo(userID)
@@ -62,7 +63,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			.GetValueAsync();
 
 	// #if !UNITY_EDITOR
-		// DataSnapshot snap2 = await db.RootReference.Child("matches")
+		// DataSnapshot snap2 = await db.GetReference("matches")
 		// 	.OrderByChild(nameof(MatchSaveData.playerTwoID))
 		// 	.EqualTo(userID)
 		// 	.GetValueAsync();
@@ -88,6 +89,16 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 	// #endif
 	}
 
+	public async Task<MatchSaveData> GetMatch(string matchID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		DataSnapshot snap = await db.GetReference($"matches/{matchID}").GetValueAsync();
+
+		return JsonConvert.DeserializeObject<MatchSaveData>(snap.GetRawJsonValue());
+	}
+
 	public async void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> onUpdate) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
@@ -101,8 +112,9 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			onUpdate(JsonConvert.DeserializeObject<MatchSaveData>(args.Snapshot.GetRawJsonValue()));
 		}
 
-		db.RootReference.Child("matches").Child(matchID).ValueChanged += HandleMatchUpdate;
-		matchSubscriptions.Add(HandleMatchUpdate);
+		matchReference = db.GetReference($"matches/{matchID}");
+		matchReference.ValueChanged += HandleMatchUpdate;
+		matchSubscription = HandleMatchUpdate;
 	}
 
 	public async void UnsubscribeToMatchUpdates(string matchID) {
@@ -110,12 +122,9 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		DatabaseReference matchReference = db.RootReference.Child("matches").Child(matchID);
-		foreach (EventHandler<ValueChangedEventArgs> subscription in matchSubscriptions) {
-			matchReference.ValueChanged -= subscription;
-		}
-
-		matchSubscriptions.Clear();
+		matchReference.ValueChanged -= matchSubscription;
+		matchReference = null;
+		matchSubscription = null;
 	}
 
 	public async void UpdateMatch(string matchID, MatchSaveData data) {
@@ -123,6 +132,6 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 			await FirebaseStatus.Initialization;
 		}
 
-		await db.RootReference.Child("matches").Child(matchID).SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
+		await db.GetReference($"matches/{matchID}").SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
 	}
 }

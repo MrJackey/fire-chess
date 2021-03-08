@@ -25,7 +25,7 @@ MonoBehaviour:
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
-  m_ReverseArrangement: 1
+  m_ReverseArrangement: 0
 --- !u!114 &7141215959293540533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,6 +142,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 3527068486512014913, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
+    - {fileID: 1408875361048295660, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: cfaf4cb978597c0458c6687b1641530f, type: 3}
 --- !u!1 &307682595101555137 stripped
 GameObject:

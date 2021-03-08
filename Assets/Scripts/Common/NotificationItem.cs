@@ -6,5 +6,6 @@ public class NotificationItem : MonoBehaviour {
 
 	public void Initialize(string message) {
 		textElement.text = message;
+		transform.SetAsFirstSibling();
 	}
 }

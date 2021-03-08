@@ -200,7 +200,7 @@ public class ChessBoard : MonoBehaviour {
 						replay.AddCommand(new CaptureAndPromoteCommand(captureCommand, promotionCommand));
 					}
 					else {
-						replay.AddCommand(new PromotionCommand(PieceType.Queen, selectedPiece.Position, boardClick, pawn.Team));
+						replay.AddCommand(promotionCommand);
 					}
 					break;
 				}
@@ -432,7 +432,7 @@ public class ChessBoard : MonoBehaviour {
 
 	public void DisablePassant() {
 		passant.Pawn = null;
-		passant.Position = new Vector2Int(-1, -1);
+		passant.Position.Set(-1, -1);
 	}
 
 #endregion

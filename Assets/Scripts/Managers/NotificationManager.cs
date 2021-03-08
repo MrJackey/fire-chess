@@ -51,7 +51,7 @@ public class NotificationManager : MonoBehaviour {
 		yield return new WaitForSeconds(defaultNotificationDuration);
 
 		while (waitingNotifications.Count > 0) {
-			item.Initialize(waitingNotifications.Peek());
+			item.Initialize(waitingNotifications.Dequeue());
 			yield return new WaitForSeconds(defaultNotificationDuration);
 		}
 		item.gameObject.SetActive(false);

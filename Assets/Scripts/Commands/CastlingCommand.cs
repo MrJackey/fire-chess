@@ -15,13 +15,13 @@ public class CastlingCommand : ICommand {
 		this.moveTwoTo = moveTwoTo;
 	}
 
-	public void Do(ChessBoard board) {
-		board.MovePiece(moveOneFrom.FloorToInt(), moveOneTo.FloorToInt());
-		board.MovePiece(moveTwoFrom.FloorToInt(), moveTwoTo.FloorToInt());
+	public void Do(ChessBoard board, bool force) {
+		board.MovePiece(moveOneFrom.FloorToInt(), moveOneTo.FloorToInt(), force);
+		board.MovePiece(moveTwoFrom.FloorToInt(), moveTwoTo.FloorToInt(), force);
 	}
 
-	public void Undo(ChessBoard board) {
-		board.MovePiece(moveOneTo.FloorToInt(), moveOneFrom.FloorToInt());
-		board.MovePiece(moveTwoTo.FloorToInt(), moveTwoFrom.FloorToInt());
+	public void Undo(ChessBoard board, bool force) {
+		board.MovePiece(moveOneTo.FloorToInt(), moveOneFrom.FloorToInt(), force);
+		board.MovePiece(moveTwoTo.FloorToInt(), moveTwoFrom.FloorToInt(), force);
 	}
 }

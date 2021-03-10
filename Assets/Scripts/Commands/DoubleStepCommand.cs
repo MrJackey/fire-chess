@@ -15,13 +15,13 @@ public class DoubleStepCommand : ICommand {
 		this.skippedPosition = this.moveTo - Vector2Int.up * (int)pawnTeam;
 	}
 
-	public void Do(ChessBoard board) {
-		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt());
+	public void Do(ChessBoard board, bool force) {
+		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt(), force);
 		board.EnablePassant(skippedPosition.FloorToInt(), (skippedPosition + Vector2.up * (int)pawnTeam).FloorToInt());
 	}
 
-	public void Undo(ChessBoard board) {
-		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt());
+	public void Undo(ChessBoard board, bool force) {
+		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt(), force);
 		board.DisablePassant();
 	}
 }

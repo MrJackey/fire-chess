@@ -11,13 +11,13 @@ public class CaptureAndPromoteCommand : ICommand {
 		this.promotionCommand = promotionCommand;
 	}
 
-	public void Do(ChessBoard board) {
-		captureCommand.Do(board);
-		promotionCommand.Do(board);
+	public void Do(ChessBoard board, bool force) {
+		captureCommand.Do(board, force);
+		promotionCommand.Do(board, force);
 	}
 
-	public void Undo(ChessBoard board) {
-		promotionCommand.Undo(board);
-		captureCommand.Undo(board);
+	public void Undo(ChessBoard board, bool force) {
+		promotionCommand.Undo(board, force);
+		captureCommand.Undo(board, force);
 	}
 }

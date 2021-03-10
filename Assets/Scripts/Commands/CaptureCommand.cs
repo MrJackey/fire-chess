@@ -17,13 +17,13 @@ public class CaptureCommand : ICommand {
 		this.piece = capturedPiece.Type;
 	}
 
-	public void Do(ChessBoard board) {
+	public void Do(ChessBoard board, bool force) {
 		board.DestroyPiece(removeAt.FloorToInt());
-		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt());
+		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt(), force);
 	}
 
-	public void Undo(ChessBoard board) {
-		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt());
+	public void Undo(ChessBoard board, bool force) {
+		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt(), force);
 		board.GeneratePiece(piece, team, removeAt.FloorToInt());
 	}
 }

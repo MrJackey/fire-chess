@@ -56,8 +56,8 @@ public class ChessBoard : MonoBehaviour {
 
 		GenerateBoard();
 
-		possibleMoveParticleSystems = new ParticleSystem[21];
-		for (int i = 0; i < 21; i++) {
+		possibleMoveParticleSystems = new ParticleSystem[27];
+		for (int i = 0; i < 27; i++) {
 			possibleMoveParticleSystems[i] = Instantiate(possibleMoveParticleSystem);
 			possibleMoveParticleSystems[i].transform.parent = transform;
 			possibleMoveParticleSystems[i].Stop();
@@ -150,7 +150,7 @@ public class ChessBoard : MonoBehaviour {
 		Vector2Int boardClick = WorldToBoard(worldClick);
 		if (!IsPositionOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
-		// if (!MatchManager.IsMyTurn) return;
+		if (!MatchManager.IsMyTurn) return;
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -176,48 +176,68 @@ public class ChessBoard : MonoBehaviour {
 			DisablePassant();
 		}
 
-		if (TryExecuteMove(typeOfMove, clickedPiece, boardClick)) {
+		if (TryExecuteMove(typeOfMove, selectedPiece, boardClick, true)) {
+			// Prevent checking your own king
+			King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
+			if (IsChecked(myKing)) {
+				replay.RevertLatestCommand();
+				NotificationManager.Instance.AddNotification("That move would place your king in check");
+				return;
+			}
+
+			// Is the opponent's king checked?
+			King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
+			if (IsChecked(opposingKing, out ChessPiece checker, out List<Vector2Int> capturePath)) {
+				if (IsCheckMate(opposingKing, checker, capturePath)) {
+					NotificationManager.Instance.AddNotification("!!!CHECKMATE!!!");
+				}
+				else {
+					NotificationManager.Instance.AddNotification("CHECK!!!");
+				}
+			}
+
 			replay.Save();
 			DeselectPiece();
 		}
 	}
 
-	private bool TryExecuteMove(MoveType typeOfMove, ChessPiece clickedPiece, Vector2Int boardClick) {
+	private bool TryExecuteMove(MoveType typeOfMove, ChessPiece movingPiece, Vector2Int boardClick, bool force) {
+		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		switch (typeOfMove) {
 			case MoveType.Move:
 				bool hasCaptured = false;
 				CaptureCommand captureCommand = null;
 				if (clickedPiece != null) {
-					captureCommand = new CaptureCommand(selectedPiece.Position, boardClick, boardClick, clickedPiece);
-					replay.AddCommand(captureCommand);
+					captureCommand = new CaptureCommand(movingPiece.Position, boardClick, boardClick, clickedPiece);
+					replay.AddCommand(captureCommand, force);
 					hasCaptured = true;
 				}
 
-				if (selectedPiece is Pawn pawn && boardClick.y == (pawn.Team == Team.White ? boardSize.height - 1 : 0)) {
-					PromotionCommand promotionCommand = new PromotionCommand(PieceType.Queen, selectedPiece.Position, boardClick, pawn.Team);
+				if (movingPiece is Pawn pawn && boardClick.y == (pawn.Team == Team.White ? boardSize.height - 1 : 0)) {
+					PromotionCommand promotionCommand = new PromotionCommand(PieceType.Queen, movingPiece.Position, boardClick, pawn.Team);
 					if (hasCaptured) {
-						replay.RevertNewCommands();
-						replay.AddCommand(new CaptureAndPromoteCommand(captureCommand, promotionCommand));
+						replay.RevertLatestCommand();
+						replay.AddCommand(new CaptureAndPromoteCommand(captureCommand, promotionCommand), force);
 					}
 					else {
-						replay.AddCommand(promotionCommand);
+						replay.AddCommand(promotionCommand, force);
 					}
 					break;
 				}
 
 				if (!hasCaptured) {
-					replay.AddCommand(new MoveCommand(selectedPiece.Position, boardClick));
+					replay.AddCommand(new MoveCommand(movingPiece.Position, boardClick), force);
 				}
 
 				break;
 			case MoveType.Castling:
-				if (!TryCastling(boardClick)) {
+				if (!TryCastling(movingPiece, boardClick, force)) {
 					return false;
 				}
 
 				break;
 			case MoveType.EnPassant:
-				if (!TryEnPassant(boardClick)) {
+				if (!TryEnPassant(movingPiece, boardClick, force)) {
 					return false;
 				}
 
@@ -227,7 +247,7 @@ public class ChessBoard : MonoBehaviour {
 					return false;
 				}
 
-				replay.AddCommand(new DoubleStepCommand(selectedPiece.Position, boardClick, selectedPiece.Team));
+				replay.AddCommand(new DoubleStepCommand(movingPiece.Position, boardClick, movingPiece.Team), force);
 
 				break;
 			case MoveType.None:
@@ -236,24 +256,10 @@ public class ChessBoard : MonoBehaviour {
 				throw new ArgumentOutOfRangeException();
 		}
 
-		// Prevent checking your own king
-		King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
-		if (IsChecked(myKing)) {
-			replay.RevertNewCommands();
-			NotificationManager.Instance.AddNotification("You are not allowed to check yourself");
-			return false;
-		}
-
-		// Is the opponent's king checked?
-		King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
-		if (IsChecked(opposingKing)) {
-			NotificationManager.Instance.AddNotification("CHECK!!!");
-		}
-
 		return true;
 	}
 
-#endregion
+	#endregion
 
 #region Logic
 	private bool IsPathObstructed(IEnumerable<Vector2Int> path) {
@@ -261,6 +267,13 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	private bool IsChecked(King king) {
+		return IsChecked(king, out ChessPiece _, out List<Vector2Int> _);
+	}
+
+	private bool IsChecked(King king, out ChessPiece checker, out List<Vector2Int> path) {
+		path = new List<Vector2Int>();
+		checker = null;
+
 		// check all directions
 		for (float i = 0; i < Mathf.PI * 2; i += Mathf.PI / 4) {
 			Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).RoundToInt();
@@ -269,12 +282,14 @@ public class ChessBoard : MonoBehaviour {
 				continue;
 			}
 
-			if (closestPiece.TryMoveTo(king.Position, false, out List<Vector2Int> path) ==
+			if (closestPiece.TryMoveTo(king.Position, false, out List<Vector2Int> piecePath) ==
 			    MoveType.None) {
 				continue;
 			}
 
-			if (!IsPathObstructed(path)) {
+			if (!IsPathObstructed(piecePath)) {
+				path = piecePath;
+				checker = closestPiece;
 				return true;
 			}
 		}
@@ -288,10 +303,60 @@ public class ChessBoard : MonoBehaviour {
 				continue;
 			}
 
+			checker = knight;
 			return true;
 		}
 
 		return false;
+	}
+
+	private bool IsCheckMate(King king, ChessPiece checker, List<Vector2Int> capturePath) {
+		List<Vector2Int> kingMoves = GetPossibleMoves(king);
+
+		foreach (Vector2Int possibleKingPosition in kingMoves) {
+			MoveType moveType = king.TryMoveTo(possibleKingPosition, board[possibleKingPosition.x, possibleKingPosition.y] == null);
+			if (!DoesMoveStillCheck(moveType, king, possibleKingPosition)) {
+				return false;
+			}
+		}
+
+		List<ChessPiece> kingAllies = board.Enumerate().Where(x => x != null && x.Team == king.Team && !(x is King)).ToList();
+
+		foreach (ChessPiece piece in kingAllies) {
+			MoveType moveType = piece.TryMoveTo(checker.Position, false, out List<Vector2Int> piecePath);
+			if (moveType != MoveType.None && !IsPathObstructed(piecePath)) {
+				if (!DoesMoveStillCheck(moveType, king, piece.Position)) {
+					return false;
+				}
+			}
+
+			foreach (Vector2Int location in capturePath) {
+				moveType = piece.TryMoveTo(location, true, out List<Vector2Int> piecePath2);
+				if (moveType == MoveType.None) continue;
+				if (IsPathObstructed(piecePath2)) continue;
+				if (!TryExecuteMove(moveType, piece, location, true)) continue;
+
+				if (!IsChecked(king)) {
+					replay.RevertLatestCommand();
+					return false;
+				}
+				replay.RevertLatestCommand();
+			}
+		}
+
+		return true;
+	}
+
+	private bool DoesMoveStillCheck(MoveType move, King king, Vector2Int position) {
+		if (!TryExecuteMove(move, king, position, true)) return true;
+
+		if (!IsChecked(king)) {
+			replay.RevertLatestCommand();
+			return false;
+		}
+
+		replay.RevertLatestCommand();
+		return true;
 	}
 
 	private ChessPiece GetClosestPiece(Vector2Int position, Vector2Int direction) {
@@ -328,7 +393,7 @@ public class ChessBoard : MonoBehaviour {
 			}
 		}
 		else {
-			float smallNumber = 0.000001f;
+			const float smallNumber = 0.000001f;
 
 			for (float i = 0; i < Mathf.PI * 2 - smallNumber; i += Mathf.PI / 4) {
 				Vector2Int direction = new Vector2(Mathf.Cos(i), Mathf.Sin(i)).RoundToInt();
@@ -340,7 +405,10 @@ public class ChessBoard : MonoBehaviour {
 
 					MoveType move = piece.TryMoveTo(nextPosition, otherPiece == null, out List<Vector2Int> path);
 					if (move == MoveType.None) break;
-					if (move == MoveType.EnPassant && (passant.Position != nextPosition || passant?.Pawn.Team == piece.Team)) break;
+					if (move == MoveType.EnPassant) {
+						if (passant.Pawn == null) break;
+						if (passant.Position != nextPosition || passant.Pawn.Team == piece.Team) break;
+					}
 					if (IsPathObstructed(path)) break;
 
 					moves.Add(nextPosition);
@@ -377,42 +445,49 @@ public class ChessBoard : MonoBehaviour {
 		}
 	}
 
-	private bool TryCastling(Vector2Int boardClick) {
-		int castlingDirection = Math.Sign(boardClick.x - selectedPiece.Position.x);
+	private bool TryCastling(ChessPiece movingKing, Vector2Int boardClick, bool force) {
+		int castlingDirection = Math.Sign(boardClick.x - movingKing.Position.x);
 		ChessPiece cornerPiece = board[
 			castlingDirection > 0 ? boardSize.width - 1 : 0,
-			selectedPiece.Team == Team.White ? 0 : boardSize.height - 1
+			movingKing.Team == Team.White ? 0 : boardSize.height - 1
 		];
 
-		if (cornerPiece == null || IsPathObstructed(selectedPiece.GetLinearPathTo(cornerPiece.Position))) return false;
+		if (cornerPiece == null || IsPathObstructed(movingKing.GetLinearPathTo(cornerPiece.Position))) return false;
 
 		if (cornerPiece is Rook rook && !rook.HasMoved) {
-			replay.AddCommand(new CastlingCommand(selectedPiece.Position, boardClick, rook.Position,  boardClick - Vector2Int.right * castlingDirection));
+			replay.AddCommand(new CastlingCommand(movingKing.Position, boardClick, rook.Position,  boardClick - Vector2Int.right * castlingDirection), force);
 			return true;
 		}
 
 		return false;
 	}
 
-	private bool TryEnPassant(Vector2Int boardClick) {
-		if (passant.Pawn != null && passant.Pawn.Team == selectedPiece.Team) return false;
+	private bool TryEnPassant(ChessPiece movingPawn, Vector2Int boardClick, bool force) {
+		if (passant.Pawn != null && passant.Pawn.Team == movingPawn.Team) return false;
 		if (passant.Pawn == null || passant.Position != boardClick ) return false;
 
-		replay.AddCommand(new CaptureCommand(selectedPiece.Position, boardClick, passant.Pawn.Position, passant.Pawn));
+		replay.AddCommand(new CaptureCommand(movingPawn.Position, boardClick, passant.Pawn.Position, passant.Pawn), force);
 
 		return true;
 	}
 
-	public void MovePiece(Vector2Int from, Vector2Int to) {
+	public void MovePiece(Vector2Int from, Vector2Int to, bool force) {
 		ChessPiece piece = board[from.x, from.y];
 		Vector3 newPosition = BoardToLocal(to);
 
-		piece.gameObject.transform.DOKill();
-		piece.transform.DOLocalJump(newPosition, jumpHeight, 1, moveDuration);
 
 		board[piece.Position.x, piece.Position.y] = null;
 		board[to.x, to.y] = piece;
-		piece.MoveTo(to);
+
+		if (force) {
+			piece.gameObject.transform.position = newPosition;
+			piece.Position = to;
+		}
+		else {
+			piece.gameObject.transform.DOKill();
+			piece.transform.DOLocalJump(newPosition, jumpHeight, 1, moveDuration);
+			piece.MoveTo(to);
+		}
 	}
 
 	public void DestroyPiece(Vector2Int boardPosition) {

@@ -10,13 +10,13 @@ public class EnPassantCommand : ICommand {
 		this.pawnMove = pawnMove;
 		this.pawnCapture = pawnCapture;
 	}
-	public void Do(ChessBoard board) {
-		pawnMove.Do(board);
-		pawnCapture.Do(board);
+	public void Do(ChessBoard board, bool force) {
+		pawnMove.Do(board, force);
+		pawnCapture.Do(board, force);
 	}
 
-	public void Undo(ChessBoard board) {
-		pawnMove.Undo(board);
-		pawnCapture.Undo(board);
+	public void Undo(ChessBoard board, bool force) {
+		pawnMove.Undo(board, force);
+		pawnCapture.Undo(board, force);
 	}
 }

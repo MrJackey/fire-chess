@@ -11,11 +11,11 @@ public class MoveCommand : ICommand {
 		this.to = to;
 	}
 
-	public void Do(ChessBoard board) {
-		board.MovePiece(from.FloorToInt(), to.FloorToInt());
+	public void Do(ChessBoard board, bool force) {
+		board.MovePiece(from.FloorToInt(), to.FloorToInt(), force);
 	}
 
-	public void Undo(ChessBoard board) {
-		board.MovePiece(to.FloorToInt(), from.FloorToInt());
+	public void Undo(ChessBoard board, bool force) {
+		board.MovePiece(to.FloorToInt(), from.FloorToInt(), force);
 	}
 }

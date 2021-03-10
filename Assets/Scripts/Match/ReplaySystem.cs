@@ -69,11 +69,11 @@ public class ReplaySystem : MonoBehaviour {
 		UpdateSlider();
 	}
 
-	public void AddCommand(ICommand command) {
+	public void AddCommand(ICommand command, bool force) {
 		if (!IsLive) return;
 
 		newCommands.Add(command);
-		command.Do(board);
+		command.Do(board, force);
 	}
 
 	private void PlayCommands(int target, int direction) {
@@ -176,13 +176,14 @@ public class ReplaySystem : MonoBehaviour {
 	public void Save() {
 		currentCommandIndex += newCommands.Count;
 		MatchManager.UpdateMatch(commands.Concat(newCommands).ToList());
+
+		newCommands[newCommands.Count - 1].Undo(board, true);
+		newCommands[newCommands.Count - 1].Do(board);
 		newCommands.Clear();
 	}
 
-	public void RevertNewCommands() {
-		for (int i = newCommands.Count - 1; i >= 0; i--) {
-			newCommands[i].Undo(board);
-		}
-		newCommands.Clear();
+	public void RevertLatestCommand() {
+		newCommands[newCommands.Count - 1].Undo(board, true);
+		newCommands.RemoveAt(newCommands.Count - 1);
 	}
 }

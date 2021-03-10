@@ -56,37 +56,29 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		}
 
 		DataSnapshot snap1 = await db.GetReference("matches")
-	// #if !UNITY_EDITOR
 			// .OrderByChild(nameof(MatchSaveData.playerOneID))
 			// .EqualTo(userID)
-	// #endif
 			.GetValueAsync();
 
-	// #if !UNITY_EDITOR
 		// DataSnapshot snap2 = await db.GetReference("matches")
 		// 	.OrderByChild(nameof(MatchSaveData.playerTwoID))
 		// 	.EqualTo(userID)
 		// 	.GetValueAsync();
-	// #endif
 
 		Dictionary<string, MatchSaveData> matchesAsPlayerOne =
 			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue());
-	// #if !UNITY_EDITOR
+
 		// Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
 		// 	JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());
-	// #endif
 
-	// #if UNITY_EDITOR
 		// Client side querying instead of server-side
 		return matchesAsPlayerOne
 			.Where(pair => pair.Value.playerOneID == userID || pair.Value.playerTwoID == userID)
 			.GroupBy(pair => pair.Key)
 			.Select(group => group.First())
 			.ToArray();
-	// #else
 		// If serverside querying works
 		// return matchesAsPlayerOne.Concat(matchesAsPlayerTwo).ToArray();
-	// #endif
 	}
 
 	public async Task<MatchSaveData> GetMatch(string matchID) {

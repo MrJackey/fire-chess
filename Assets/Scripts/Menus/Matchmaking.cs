@@ -56,19 +56,23 @@ public class Matchmaking : MonoBehaviour {
 
 	public async void FindPublicGame() {
 		if (isSettingUpSearch) return;
+
+		isSettingUpSearch = true;
 		if (isSearchingActive) {
 			await ServiceLocator.Matchmaking.StopSearchPublicLobby();
 			isSettingUpSearch = false;
 			isSearchingActive = false;
+
 			searchGameButtonText.text = "Search match";
 			return;
 		}
 
 		string userID = ServiceLocator.Auth.UserID;
-		isSettingUpSearch = true;
+
 		await ServiceLocator.Matchmaking.SearchPublicLobby(userID, MatchManager.OpenGame);
-		searchGameButtonText.text = "Searching...";
 		isSearchingActive = true;
 		isSettingUpSearch = false;
+
+		searchGameButtonText.text = "Searching...";
 	}
 }

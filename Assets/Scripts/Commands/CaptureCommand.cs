@@ -18,12 +18,12 @@ public class CaptureCommand : ICommand {
 	}
 
 	public void Do(ChessBoard board, bool force) {
-		board.DestroyPiece(removeAt.FloorToInt());
+		board.DestroyPiece(removeAt.FloorToInt(), force);
 		board.MovePiece(moveFrom.FloorToInt(), moveTo.FloorToInt(), force);
 	}
 
 	public void Undo(ChessBoard board, bool force) {
 		board.MovePiece(moveTo.FloorToInt(), moveFrom.FloorToInt(), force);
-		board.GeneratePiece(piece, team, removeAt.FloorToInt());
+		board.GeneratePiece(piece, team, removeAt.FloorToInt(), force);
 	}
 }

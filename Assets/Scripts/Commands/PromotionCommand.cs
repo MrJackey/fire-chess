@@ -16,12 +16,12 @@ public class PromotionCommand : ICommand {
 	}
 
 	public void Do(ChessBoard board, bool force) {
-		board.DestroyPiece(pawnPosition.FloorToInt());
-		board.GeneratePiece(promoteTo, team, promotePosition.FloorToInt());
+		board.DestroyPiece(pawnPosition.FloorToInt(), force);
+		board.GeneratePiece(promoteTo, team, promotePosition.FloorToInt(), force);
 	}
 
 	public void Undo(ChessBoard board, bool force) {
-		board.DestroyPiece(promotePosition.FloorToInt());
-		board.GeneratePiece(PieceType.Pawn, team, pawnPosition.FloorToInt());
+		board.DestroyPiece(promotePosition.FloorToInt(), force);
+		board.GeneratePiece(PieceType.Pawn, team, pawnPosition.FloorToInt(), force);
 	}
 }

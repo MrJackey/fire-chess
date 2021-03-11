@@ -29,6 +29,8 @@ public class ChessBoard : MonoBehaviour {
 	[Header("VFX")]
 	[SerializeField] private ParticleSystem selectedParticleSystem;
 	[SerializeField] private ParticleSystem possibleMoveParticleSystem;
+	[SerializeField] private Color forbiddenMoveColor;
+	[SerializeField] private Color moveColor;
 	[SerializeField] private float moveDuration = 0.75f;
 	[SerializeField] private float jumpHeight = 2f;
 
@@ -38,6 +40,7 @@ public class ChessBoard : MonoBehaviour {
 	private ChessPiece[,] board;
 	private ChessPiece selectedPiece;
 	private Passant passant;
+	private Stack<ChessPiece> forceDestroyedPieces;
 
 	private King whiteKing;
 	private King blackKing;
@@ -50,6 +53,7 @@ public class ChessBoard : MonoBehaviour {
 		boardSize = (8, 8);
 		board = new ChessPiece[boardSize.width, boardSize.height];
 		passant = new Passant();
+		forceDestroyedPieces = new Stack<ChessPiece>();
 
 		grid = GetComponent<Grid>();
 		selectedParticleSystem.Stop();
@@ -109,8 +113,13 @@ public class ChessBoard : MonoBehaviour {
 		return piece;
 	}
 	
-	public void GeneratePiece(PieceType piece, Team team, Vector2Int gridPosition) {
-		GeneratePiece(GetPrefab(piece, team), gridPosition);
+	public void GeneratePiece(PieceType piece, Team team, Vector2Int gridPosition, bool force) {
+		if (force) {
+			board[gridPosition.x, gridPosition.y] = forceDestroyedPieces.Pop();
+		}
+		else {
+			GeneratePiece(GetPrefab(piece, team), gridPosition);
+		}
 	}
 
 	private ChessPiece GetPrefab(PieceType piece, Team team) {
@@ -150,7 +159,7 @@ public class ChessBoard : MonoBehaviour {
 		Vector2Int boardClick = WorldToBoard(worldClick);
 		if (!IsPositionOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
-		if (!MatchManager.IsMyTurn) return;
+		// if (!MatchManager.IsMyTurn) return;
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -172,16 +181,12 @@ public class ChessBoard : MonoBehaviour {
 
 		if (typeOfMove == MoveType.None || IsPathObstructed(path)) return;
 
-		if (passant.Pawn != null && !(replay.Commands[replay.Commands.Count - 1] is DoubleStepCommand)) {
-			DisablePassant();
-		}
-
 		if (TryExecuteMove(typeOfMove, selectedPiece, boardClick, true)) {
 			// Prevent checking your own king
 			King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
 			if (IsChecked(myKing)) {
 				replay.RevertLatestCommand();
-				NotificationManager.Instance.AddNotification("That move would place your king in check");
+				NotificationManager.Instance.AddNotification("That move would leave your king in check");
 				return;
 			}
 
@@ -259,9 +264,10 @@ public class ChessBoard : MonoBehaviour {
 		return true;
 	}
 
-	#endregion
+#endregion
 
 #region Logic
+
 	private bool IsPathObstructed(IEnumerable<Vector2Int> path) {
 		return path.Any(coord => board[coord.x, coord.y] != null);
 	}
@@ -315,7 +321,7 @@ public class ChessBoard : MonoBehaviour {
 
 		foreach (Vector2Int possibleKingPosition in kingMoves) {
 			MoveType moveType = king.TryMoveTo(possibleKingPosition, board[possibleKingPosition.x, possibleKingPosition.y] == null);
-			if (!DoesMoveStillCheck(moveType, king, possibleKingPosition)) {
+			if (!DoesMoveCheck(moveType, king, king, possibleKingPosition)) {
 				return false;
 			}
 		}
@@ -325,7 +331,7 @@ public class ChessBoard : MonoBehaviour {
 		foreach (ChessPiece piece in kingAllies) {
 			MoveType moveType = piece.TryMoveTo(checker.Position, false, out List<Vector2Int> piecePath);
 			if (moveType != MoveType.None && !IsPathObstructed(piecePath)) {
-				if (!DoesMoveStillCheck(moveType, king, piece.Position)) {
+				if (!DoesMoveCheck(moveType, piece, king, checker.Position)) {
 					return false;
 				}
 			}
@@ -347,8 +353,8 @@ public class ChessBoard : MonoBehaviour {
 		return true;
 	}
 
-	private bool DoesMoveStillCheck(MoveType move, King king, Vector2Int position) {
-		if (!TryExecuteMove(move, king, position, true)) return true;
+	private bool DoesMoveCheck(MoveType move, ChessPiece mover, King king, Vector2Int newPosition) {
+		if (!TryExecuteMove(move, mover, newPosition, true)) return true;
 
 		if (!IsChecked(king)) {
 			replay.RevertLatestCommand();
@@ -430,7 +436,17 @@ public class ChessBoard : MonoBehaviour {
 		selectedParticleSystem.Play();
 
 		List<Vector2Int> possibleMoves = GetPossibleMoves(piece);
+		King myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
 		for (int i = 0; i < possibleMoves.Count; i++) {
+			MoveType moveType = piece.TryMoveTo(possibleMoves[i],
+				board[possibleMoves[i].x, possibleMoves[i].y] == null);
+
+			ParticleSystem.MainModule module = possibleMoveParticleSystems[i].main;
+			Color indicationColor = DoesMoveCheck(moveType, piece, myKing, possibleMoves[i])
+				? forbiddenMoveColor
+				: moveColor;
+			module.startColor = indicationColor;
+
 			possibleMoveParticleSystems[i].transform.position = BoardToLocal(possibleMoves[i]);
 			possibleMoveParticleSystems[i].Play();
 		}
@@ -490,12 +506,16 @@ public class ChessBoard : MonoBehaviour {
 		}
 	}
 
-	public void DestroyPiece(Vector2Int boardPosition) {
+	public void DestroyPiece(Vector2Int boardPosition, bool force) {
 		ChessPiece piece = board[boardPosition.x, boardPosition.y];
 		GameObject go = piece.gameObject;
-
-		go.transform.DOKill();
-		Destroy(go);
+		if (force) {
+			forceDestroyedPieces.Push(piece);
+		}
+		else {
+			go.transform.DOKill();
+			Destroy(go);
+		}
 
 		board[boardPosition.x, boardPosition.y] = null;
 	}
@@ -511,4 +531,5 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 #endregion
+
 }

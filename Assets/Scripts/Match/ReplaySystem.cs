@@ -21,13 +21,13 @@ public class ReplaySystem : MonoBehaviour {
 	private List<ICommand> commands;
 	public List<ICommand> Commands => commands;
 
-	private List<ICommand> newCommands;
+	private Stack<ICommand> newCommands;
 	private int currentCommandIndex;
 	public bool IsLive => currentCommandIndex == commands.Count - 1;
 
 	private void Start() {
 		commands = new List<ICommand>();
-		newCommands = new List<ICommand>();
+		newCommands = new Stack<ICommand>();
 		currentCommandIndex = -1;
 		newMovesNotification.SetActive(false);
 	}
@@ -56,6 +56,10 @@ public class ReplaySystem : MonoBehaviour {
 		slider.maxValue = commands.Count - 1;
 		activePlayerTurn.text = MatchManager.IsMyTurn ? "Your Turn" : $"{data.OpponentName}'s Turn";
 
+		if (!(Commands[Commands.Count - 1] is DoubleStepCommand)) {
+			board.DisablePassant();
+		}
+
 		if (wasLive || IsLive) {
 			if (currentCommandIndex == -1 || MatchManager.IsMyTurn) {
 				StartCoroutine(CoShowCommands(commands.Count - 1, 1));
@@ -72,7 +76,7 @@ public class ReplaySystem : MonoBehaviour {
 	public void AddCommand(ICommand command, bool force) {
 		if (!IsLive) return;
 
-		newCommands.Add(command);
+		newCommands.Push(command);
 		command.Do(board, force);
 	}
 
@@ -132,6 +136,10 @@ public class ReplaySystem : MonoBehaviour {
 
 	#region UI Events
 
+	public void ToggleVisibility() {
+
+	}
+
 	public void ToStart() {
 		PrepareReplayUpdate();
 		PlayCommands(-1, -1);
@@ -166,7 +174,7 @@ public class ReplaySystem : MonoBehaviour {
 		int nextTarget = (int)value;
 		if (nextTarget == currentCommandIndex) return;
 
-		StopAllCoroutines();
+		PrepareReplayUpdate();
 		int replayDirection = Math.Sign(nextTarget - currentCommandIndex);
 		PlayCommands(nextTarget, replayDirection);
 	}
@@ -177,13 +185,12 @@ public class ReplaySystem : MonoBehaviour {
 		currentCommandIndex += newCommands.Count;
 		MatchManager.UpdateMatch(commands.Concat(newCommands).ToList());
 
-		newCommands[newCommands.Count - 1].Undo(board, true);
-		newCommands[newCommands.Count - 1].Do(board);
+		newCommands.Peek().Undo(board, true);
+		newCommands.Pop().Do(board);
 		newCommands.Clear();
 	}
 
 	public void RevertLatestCommand() {
-		newCommands[newCommands.Count - 1].Undo(board, true);
-		newCommands.RemoveAt(newCommands.Count - 1);
+		newCommands.Pop().Undo(board, true);
 	}
 }

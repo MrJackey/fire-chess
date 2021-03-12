@@ -13,6 +13,7 @@ public class MatchSaveData {
 	public string activePlayer;
 
 	public string lastUpdated;
+	public BoardStatus status;
 
 	public string OpponentName => ServiceLocator.Auth.UserID == playerOneID ? playerTwoName : playerOneName;
 
@@ -34,5 +35,6 @@ public class MatchSaveData {
 
 		this.activePlayer = this.playerOneID;
 		this.lastUpdated = DateTime.UtcNow.ToString("u");
+		this.status = BoardStatus.Normal;
 	}
 }

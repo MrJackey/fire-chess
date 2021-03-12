@@ -20,6 +20,12 @@ public static class MatchManager {
 	public static UnityEvent<MatchSaveData> OnNewData { get; } = new UnityEvent<MatchSaveData>();
 
 	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.activePlayer;
+	public static bool IsMatchOver => data.status == BoardStatus.Checkmate;
+
+	public static BoardStatus Status {
+		get => data.status;
+		set => data.status = value;
+	}
 
 	public static async void OpenGame(string newMatchID) {
 		matchID = newMatchID;

@@ -12,6 +12,7 @@ public class ReplaySystem : MonoBehaviour {
 
 	[Header("UI")]
 	[SerializeField] private TMP_Text activePlayerTurn;
+	[SerializeField] private TMP_Text boardStatusText;
 	[SerializeField] private Slider slider;
 	[SerializeField] private GameObject newMovesNotification;
 
@@ -19,7 +20,6 @@ public class ReplaySystem : MonoBehaviour {
 	[SerializeField] private float showCommandDelay;
 
 	private List<ICommand> commands;
-	public List<ICommand> Commands => commands;
 
 	private Stack<ICommand> newCommands;
 	private int currentCommandIndex;
@@ -30,6 +30,7 @@ public class ReplaySystem : MonoBehaviour {
 		newCommands = new Stack<ICommand>();
 		currentCommandIndex = -1;
 		newMovesNotification.SetActive(false);
+		boardStatusText.gameObject.SetActive(false);
 	}
 
 	private void OnEnable() {
@@ -56,7 +57,7 @@ public class ReplaySystem : MonoBehaviour {
 		slider.maxValue = commands.Count - 1;
 		activePlayerTurn.text = MatchManager.IsMyTurn ? "Your Turn" : $"{data.OpponentName}'s Turn";
 
-		if (!(Commands[Commands.Count - 1] is DoubleStepCommand)) {
+		if (commands.Count > 0 && !(commands[commands.Count - 1] is DoubleStepCommand)) {
 			board.DisablePassant();
 		}
 
@@ -109,6 +110,8 @@ public class ReplaySystem : MonoBehaviour {
 
 		if (IsLive) {
 			newMovesNotification.SetActive(false);
+			board.SetBoardStatus();
+			UpdateBoardStatusText();
 		}
 	}
 
@@ -132,6 +135,16 @@ public class ReplaySystem : MonoBehaviour {
 
 	private void UpdateSlider() {
 		slider.value = currentCommandIndex;
+	}
+
+	private void UpdateBoardStatusText() {
+		if (MatchManager.Status == BoardStatus.Normal) {
+			boardStatusText.gameObject.SetActive(false);
+		}
+		else {
+			boardStatusText.gameObject.SetActive(true);
+			boardStatusText.text = MatchManager.Status.ToString().ToUpper();
+		}
 	}
 
 	#region UI Events
@@ -188,6 +201,8 @@ public class ReplaySystem : MonoBehaviour {
 		newCommands.Peek().Undo(board, true);
 		newCommands.Pop().Do(board);
 		newCommands.Clear();
+
+		UpdateBoardStatusText();
 	}
 
 	public void RevertLatestCommand() {

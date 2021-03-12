@@ -160,6 +160,7 @@ public class ChessBoard : MonoBehaviour {
 		if (!IsPositionOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
 		// if (!MatchManager.IsMyTurn) return;
+		// if (MatchManager.IsMatchOver) return;
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -194,11 +195,14 @@ public class ChessBoard : MonoBehaviour {
 			King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
 			if (IsChecked(opposingKing, out ChessPiece checker, out List<Vector2Int> capturePath)) {
 				if (IsCheckMate(opposingKing, checker, capturePath)) {
-					NotificationManager.Instance.AddNotification("!!!CHECKMATE!!!");
+					MatchManager.Status = BoardStatus.Checkmate;
 				}
 				else {
-					NotificationManager.Instance.AddNotification("CHECK!!!");
+					MatchManager.Status = BoardStatus.Check;
 				}
+			}
+			else {
+				MatchManager.Status = BoardStatus.Normal;
 			}
 
 			replay.Save();
@@ -262,6 +266,28 @@ public class ChessBoard : MonoBehaviour {
 		}
 
 		return true;
+	}
+
+	public void SetBoardStatus() {
+		King myKing;
+		if (MatchManager.IsMyTurn) {
+			myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
+		}
+		else {
+			myKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
+		}
+
+		if (IsChecked(myKing, out ChessPiece checker, out List<Vector2Int> capturePath)) {
+			if (IsCheckMate(myKing, checker, capturePath)) {
+				MatchManager.Status = BoardStatus.Checkmate;
+			}
+			else {
+				MatchManager.Status = BoardStatus.Check;
+			}
+		}
+		else {
+			MatchManager.Status = BoardStatus.Normal;
+		}
 	}
 
 #endregion

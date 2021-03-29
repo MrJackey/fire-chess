@@ -23,4 +23,9 @@ public class MatchBrowserItem : MonoBehaviour {
 	public void EnterBoard() {
 		MatchManager.OpenGame(matchID);
 	}
+
+	public void DeleteBoard() {
+		ServiceLocator.DB.DeleteMatch(matchID);
+		Destroy(gameObject);
+	}
 }

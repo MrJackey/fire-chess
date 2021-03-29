@@ -114,6 +114,11 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 				throw args.DatabaseError.ToException();
 			}
 
+			// If the other player removes the match while subscribed
+			if (args.Snapshot.Value == null) {
+				return;
+			}
+
 			onUpdate(JsonConvert.DeserializeObject<MatchSaveData>(args.Snapshot.GetRawJsonValue()));
 		}
 
@@ -139,4 +144,13 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 
 		await db.GetReference($"matches/{matchID}").SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
 	}
+
+	public async void DeleteMatch(string matchID) {
+		if (!FirebaseStatus.Initialization.IsCompleted) {
+			await FirebaseStatus.Initialization;
+		}
+
+		await db.GetReference($"matches/{matchID}").RemoveValueAsync();
+	}
 }
+

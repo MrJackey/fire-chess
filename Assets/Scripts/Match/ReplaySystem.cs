@@ -151,10 +151,6 @@ public class ReplaySystem : MonoBehaviour {
 
 	#region UI Events
 
-	public void ToggleVisibility() {
-
-	}
-
 	public void ToStart() {
 		PrepareReplayUpdate();
 		PlayCommands(-1, -1);

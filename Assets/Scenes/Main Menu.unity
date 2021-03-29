@@ -782,7 +782,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 292898936238265513, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 292898936238265513, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_fontSize
@@ -846,7 +846,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_Text
-      value: password
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_InputType
@@ -1976,7 +1976,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 292898936238265513, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 292898936238265513, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_fontSize
@@ -2036,7 +2036,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_Text
-      value: test@test.test
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7087779525515158128, guid: e534213f93180ff4aaf600691af65c95, type: 3}
       propertyPath: m_InputType

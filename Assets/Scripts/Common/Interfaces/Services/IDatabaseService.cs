@@ -9,6 +9,7 @@ public interface IDatabaseService {
 	Task<string> CreateMatch(string creatorID, string opponentID, bool randomizeTeams = true);
 	Task<KeyValuePair<string, MatchSaveData>[]> GetMatches(string userID);
 	Task<MatchSaveData> GetMatch(string matchID);
+	void DeleteMatch(string matchID);
 
 	void SubscribeToMatchUpdates(string matchID, Action<MatchSaveData> onUpdate);
 	void UnsubscribeToMatchUpdates(string matchID);

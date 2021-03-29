@@ -1731,7 +1731,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8247956243867753162, guid: 1b92695decdde3b4f9807fd31c90247b, type: 3}
       propertyPath: m_text
-      value: loremipsumdolorsitamet
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8247956243867753162, guid: 1b92695decdde3b4f9807fd31c90247b, type: 3}
       propertyPath: m_fontSize
@@ -2510,7 +2510,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1541435505}
   m_HandleRect: {fileID: 1541435504}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

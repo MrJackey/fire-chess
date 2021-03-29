@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Firebase.Database;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -40,10 +41,10 @@ public static class MatchManager {
 		try {
 			data = await ServiceLocator.DB.GetMatch(newMatchID);
 			team = ServiceLocator.Auth.UserID == data.playerOneID ? Team.White : Team.Black;
-			SceneManager.LoadScene(3);
+			SceneManager.LoadScene(2);
 		}
-		catch {
-			NotificationManager.Instance.AddNotification("Something went wrong, unable to find the match");
+		catch (DatabaseException) {
+			NotificationManager.Instance.AddNotification("Something went wrong, unable to open the match. Try refreshing");
 		}
 	}
 

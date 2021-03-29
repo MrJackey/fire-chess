@@ -1,9 +1,5 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering.Universal;
 
 [RequireComponent(typeof(Camera))]
 public class MouseInput : MonoBehaviour {
@@ -16,7 +12,7 @@ public class MouseInput : MonoBehaviour {
 		cam = GetComponent<Camera>();
 	}
 
-	void Update() {
+	private void Update() {
 		if (Input.GetMouseButtonDown(0)) {
 			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 

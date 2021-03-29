@@ -10,9 +10,8 @@ public class MatchSaveData {
 	public string playerTwoName;
 
 	public List<CommandSaveData> commands = new List<CommandSaveData>();
-	public string activePlayer;
 
-	public string lastUpdated;
+	public long lastUpdated;
 	public BoardStatus status;
 
 	public string OpponentName => ServiceLocator.Auth.UserID == playerOneID ? playerTwoName : playerOneName;
@@ -33,8 +32,7 @@ public class MatchSaveData {
 			this.playerTwoName = playerTwoName;
 		}
 
-		this.activePlayer = this.playerOneID;
-		this.lastUpdated = DateTime.UtcNow.ToString("u");
+		this.lastUpdated = DateTime.UtcNow.Ticks;
 		this.status = BoardStatus.Normal;
 	}
 }

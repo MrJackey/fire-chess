@@ -35,10 +35,8 @@ public class FirebaseAuthProvider : IAuthService {
 			await FirebaseStatus.Initialization;
 		}
 
-		Debug.Log("[Auth] Signing in");
 		await auth.SignInWithEmailAndPasswordAsync(email, password);
 
-		Debug.Log("[Auth] Successfully signed in");
 		await FetchUserData();
 	}
 
@@ -47,7 +45,6 @@ public class FirebaseAuthProvider : IAuthService {
 			await FirebaseStatus.Initialization;
 		}
 
-		Debug.Log("[Auth] Signing out");
 		auth.SignOut();
 		userData = null;
 	}

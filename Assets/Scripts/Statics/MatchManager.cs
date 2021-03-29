@@ -19,7 +19,9 @@ public static class MatchManager {
 
 	public static UnityEvent<MatchSaveData> OnNewData { get; } = new UnityEvent<MatchSaveData>();
 
-	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.activePlayer;
+	public static bool IsMyTurn => ServiceLocator.Auth.UserID == data.playerOneID
+		? data.commands.Count % 2 == 0
+		: data.commands.Count % 2 == 1;
 	public static bool IsMatchOver => data.status == BoardStatus.Checkmate;
 
 	public static BoardStatus Status {
@@ -61,10 +63,7 @@ public static class MatchManager {
 
 	public static void UpdateMatch(List<ICommand> commands) {
 		data.commands = commands.Select(x => new CommandSaveData(x)).ToList();
-		data.activePlayer = data.activePlayer == data.playerOneID
-			? data.playerTwoID
-			: data.playerOneID;
-		data.lastUpdated = DateTime.UtcNow.ToString("u");
+		data.lastUpdated = DateTime.UtcNow.Ticks;
 
 		ServiceLocator.DB.UpdateMatch(matchID, data);
 	}

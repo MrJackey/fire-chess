@@ -4,9 +4,12 @@ using UnityEngine;
 
 public class FirebaseAuthProvider : IAuthService {
 	private readonly FirebaseAuth auth;
+	private UserSaveData userData;
 
+	public bool IsActiveLogin => auth.CurrentUser != null;
 	public string UserID => auth.CurrentUser.UserId;
 	public string DisplayName => auth.CurrentUser.DisplayName;
+	public int WinCount => userData.winCount;
 
 	public FirebaseAuthProvider() {
 		this.auth = FirebaseAuth.DefaultInstance;
@@ -36,6 +39,7 @@ public class FirebaseAuthProvider : IAuthService {
 		await auth.SignInWithEmailAndPasswordAsync(email, password);
 
 		Debug.Log("[Auth] Successfully signed in");
+		await FetchUserData();
 	}
 
 	public async void SignOut() {
@@ -45,5 +49,14 @@ public class FirebaseAuthProvider : IAuthService {
 
 		Debug.Log("[Auth] Signing out");
 		auth.SignOut();
+		userData = null;
+	}
+
+	public async Task FetchUserData() {
+		userData = await ServiceLocator.DB.GetUser(UserID);
+	}
+
+	public void IncrementWins() {
+		userData.winCount++;
 	}
 }

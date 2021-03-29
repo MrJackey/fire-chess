@@ -1,15 +1,22 @@
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Matchmaking : MonoBehaviour {
 	[SerializeField] private TMP_Text lobbyIDText;
 	[SerializeField] private TMP_InputField privateLobbyInputField;
 	[SerializeField] private TMP_Text searchGameButtonText;
+	[SerializeField] private Button copyClipboardButton;
 
 	private string lobbyID;
 	private bool isSettingUpSearch;
 	private bool isSearchingActive;
 	private bool isCreatingPrivateLobby;
+
+	private void Start() {
+		copyClipboardButton.interactable = false;
+	}
 
 	private async void OnDisable() {
 		if (lobbyID != default) {
@@ -32,11 +39,17 @@ public class Matchmaking : MonoBehaviour {
 
 		isCreatingPrivateLobby = true;
 		lobbyID = await ServiceLocator.Matchmaking.CreatePrivateLobby(ServiceLocator.Auth.UserID, MatchManager.OpenGame);
-
+		CopyPrivateIDToClipboard();
 		lobbyIDText.text = lobbyID;
+		isCreatingPrivateLobby = false;
+		copyClipboardButton.interactable = true;
+	}
+
+	public void CopyPrivateIDToClipboard() {
+		if (lobbyID == default) return;
+
 		GUIUtility.systemCopyBuffer = lobbyID;
 		NotificationManager.Instance.AddNotification("Your lobby has been copied to clipboard");
-		isCreatingPrivateLobby = false;
 	}
 
 	public void JoinPrivateLobby() {

@@ -159,8 +159,8 @@ public class ChessBoard : MonoBehaviour {
 		Vector2Int boardClick = WorldToBoard(worldClick);
 		if (!IsPositionOnBoard(boardClick)) return;
 		if (!replay.IsLive) return;
-		// if (!MatchManager.IsMyTurn) return;
-		// if (MatchManager.IsMatchOver) return;
+		if (!MatchManager.IsMyTurn) return;
+		if (MatchManager.IsMatchOver) return;
 
 		ChessPiece clickedPiece = board[boardClick.x, boardClick.y];
 		if (clickedPiece != null && clickedPiece.Team == MatchManager.MyTeam) {
@@ -191,11 +191,17 @@ public class ChessBoard : MonoBehaviour {
 				return;
 			}
 
+			ICommand latestCommand = replay.latestNewCommand;
+			replay.RevertLatestCommand();
+			latestCommand.Do(this);
+
 			// Is the opponent's king checked?
 			King opposingKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
 			if (IsChecked(opposingKing, out ChessPiece checker, out List<Vector2Int> capturePath)) {
 				if (IsCheckMate(opposingKing, checker, capturePath)) {
 					MatchManager.Status = BoardStatus.Checkmate;
+					ServiceLocator.DB.RecordVictory(ServiceLocator.Auth.UserID);
+					NotificationManager.Instance.AddNotification("!!!YOU WIN!!!");
 				}
 				else {
 					MatchManager.Status = BoardStatus.Check;
@@ -205,8 +211,9 @@ public class ChessBoard : MonoBehaviour {
 				MatchManager.Status = BoardStatus.Normal;
 			}
 
-			replay.Save();
+			replay.Save(latestCommand);
 			DeselectPiece();
+			replay.UpdateBoardStatusText();
 		}
 	}
 
@@ -269,16 +276,16 @@ public class ChessBoard : MonoBehaviour {
 	}
 
 	public void SetBoardStatus() {
-		King myKing;
+		King king;
 		if (MatchManager.IsMyTurn) {
-			myKing = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
+			king = MatchManager.MyTeam == Team.White ? whiteKing : blackKing;
 		}
 		else {
-			myKing = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
+			king = MatchManager.MyTeam == Team.White ? blackKing : whiteKing;
 		}
 
-		if (IsChecked(myKing, out ChessPiece checker, out List<Vector2Int> capturePath)) {
-			if (IsCheckMate(myKing, checker, capturePath)) {
+		if (IsChecked(king, out ChessPiece checker, out List<Vector2Int> capturePath)) {
+			if (IsCheckMate(king, checker, capturePath)) {
 				MatchManager.Status = BoardStatus.Checkmate;
 			}
 			else {

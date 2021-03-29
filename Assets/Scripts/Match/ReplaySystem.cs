@@ -25,6 +25,8 @@ public class ReplaySystem : MonoBehaviour {
 	private int currentCommandIndex;
 	public bool IsLive => currentCommandIndex == commands.Count - 1;
 
+	public ICommand latestNewCommand => newCommands.Peek();
+
 	private void Start() {
 		commands = new List<ICommand>();
 		newCommands = new Stack<ICommand>();
@@ -137,7 +139,7 @@ public class ReplaySystem : MonoBehaviour {
 		slider.value = currentCommandIndex;
 	}
 
-	private void UpdateBoardStatusText() {
+	public void UpdateBoardStatusText() {
 		if (MatchManager.Status == BoardStatus.Normal) {
 			boardStatusText.gameObject.SetActive(false);
 		}
@@ -194,12 +196,11 @@ public class ReplaySystem : MonoBehaviour {
 
 	#endregion
 
-	public void Save() {
-		currentCommandIndex += newCommands.Count;
-		MatchManager.UpdateMatch(commands.Concat(newCommands).ToList());
+	public void Save(ICommand command) {
+		currentCommandIndex++;
+		commands.Add(command);
+		MatchManager.UpdateMatch(commands);
 
-		newCommands.Peek().Undo(board, true);
-		newCommands.Pop().Do(board);
 		newCommands.Clear();
 
 		UpdateBoardStatusText();

@@ -16,7 +16,7 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		this.db = FirebaseDatabase.DefaultInstance;
 	}
 
-	private async Task<UserSaveData> GetUser(string userID) {
+	public async Task<UserSaveData> GetUser(string userID) {
 		if (!FirebaseStatus.Initialization.IsCompleted) {
 			await FirebaseStatus.Initialization;
 		}
@@ -31,6 +31,18 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		}
 
 		await db.GetReference($"users/{userID}").SetRawJsonValueAsync(JsonConvert.SerializeObject(data));
+	}
+
+	public async Task RecordVictory(string userID) {
+		await db.GetReference($"users/{userID}/winCount").RunTransaction(userWinData => {
+			if (userWinData.Value == null) return TransactionResult.Success(null);
+
+			int winCount = (int)(long)userWinData.Value;
+			userWinData.Value = winCount + 1;
+
+			return TransactionResult.Success(userWinData);
+		});
+		ServiceLocator.Auth.IncrementWins();
 	}
 
 	public async Task<string> CreateMatch(string creatorID, string opponentID, bool randomizeTeams = true) {

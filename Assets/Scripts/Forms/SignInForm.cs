@@ -9,6 +9,13 @@ public class SignInForm : MonoBehaviour, IForm {
 	[SerializeField] private TMP_InputField emailField;
 	[SerializeField] private TMP_InputField passwordField;
 
+	private async void Start() {
+		if (ServiceLocator.Auth.IsActiveLogin) {
+			await ServiceLocator.Auth.FetchUserData();
+			SceneManager.LoadScene(1);
+		}
+	}
+
 	public async void Submit() {
 		try {
 			await ServiceLocator.Auth.SignIn(emailField.text, passwordField.text);

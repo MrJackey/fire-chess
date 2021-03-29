@@ -77,8 +77,9 @@ public class FirebaseDatabaseProvider : IDatabaseService {
 		// 	.EqualTo(userID)
 		// 	.GetValueAsync();
 
-		Dictionary<string, MatchSaveData> matchesAsPlayerOne =
-			JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue());
+		Dictionary<string, MatchSaveData> matchesAsPlayerOne = snap1.HasChildren
+			? JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap1.GetRawJsonValue())
+			: new Dictionary<string, MatchSaveData>();
 
 		// Dictionary<string, MatchSaveData> matchesAsPlayerTwo =
 		// 	JsonConvert.DeserializeObject<Dictionary<string, MatchSaveData>>(snap2.GetRawJsonValue());

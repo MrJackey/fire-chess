@@ -140,7 +140,7 @@ public class ReplaySystem : MonoBehaviour {
 	}
 
 	public void UpdateBoardStatusText() {
-		if (MatchManager.Status == BoardStatus.Normal) {
+		if (MatchManager.Status == BoardStatus.Ongoing) {
 			boardStatusText.gameObject.SetActive(false);
 		}
 		else {

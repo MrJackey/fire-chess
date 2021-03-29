@@ -1,5 +1,5 @@
 ﻿public enum BoardStatus {
-	Normal,
+	Ongoing,
 	Check,
 	Checkmate,
 }

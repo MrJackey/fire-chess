@@ -208,7 +208,7 @@ public class ChessBoard : MonoBehaviour {
 				}
 			}
 			else {
-				MatchManager.Status = BoardStatus.Normal;
+				MatchManager.Status = BoardStatus.Ongoing;
 			}
 
 			replay.Save(latestCommand);
@@ -293,7 +293,7 @@ public class ChessBoard : MonoBehaviour {
 			}
 		}
 		else {
-			MatchManager.Status = BoardStatus.Normal;
+			MatchManager.Status = BoardStatus.Ongoing;
 		}
 	}
 

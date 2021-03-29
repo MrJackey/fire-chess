@@ -29,6 +29,12 @@ public static class MatchManager {
 		set => data.status = value;
 	}
 
+	public static bool IsItMyTurn(MatchSaveData matchData) {
+		return ServiceLocator.Auth.UserID == matchData.playerOneID
+			? matchData.commands.Count % 2 == 0
+			: matchData.commands.Count % 2 == 1;
+	}
+
 	public static async void OpenGame(string newMatchID) {
 		matchID = newMatchID;
 		try {

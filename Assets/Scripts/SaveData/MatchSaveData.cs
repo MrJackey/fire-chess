@@ -33,6 +33,6 @@ public class MatchSaveData {
 		}
 
 		this.lastUpdated = DateTime.UtcNow.Ticks;
-		this.status = BoardStatus.Normal;
+		this.status = BoardStatus.Ongoing;
 	}
 }
